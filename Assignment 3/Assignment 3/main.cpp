@@ -4,18 +4,18 @@
 #include <unordered_map>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-#include "shader.h"
-#include "camera.h"
-#include "lightmanager.h"
-#include "model.h"
-#include "skybox.h"
+#include "Shader.h"
+#include "Camera.h"
+#include "LightManager.h"
+#include "Model.h"
+#include "Skybox.h"
 
 // Settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f)); // Set initial position a bit further back to allow zooming in and out
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -44,7 +44,7 @@ bool wireframe = false;
 bool cursorVisible = false;
 
 // Scale factor for the model
-const float modelScaleFactor = 0.1f;  // Adjust this value to scale down the model
+const float modelScaleFactor = 0.01f;  // Adjust this value to scale down the model
 
 void processInput(GLFWwindow* window);
 void toggleWireframeMode();
@@ -96,10 +96,13 @@ int main()
 
     // Build and compile shaders
     Shader lightingShader("resources/shaders/VertexShader.vert", "resources/shaders/FragmentShader.frag");
+    Shader reflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
     Shader skyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
 
     // Load models
-    Model model("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Statue_01.png");
+    Model gardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
+    Model tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
+    Model statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
 
     // Load skybox
     std::vector<std::string> faces
@@ -108,8 +111,8 @@ int main()
         "resources/skybox/Corona/Left.png",    // Left
         "resources/skybox/Corona/Top.png",     // Top
         "resources/skybox/Corona/Bottom.png",  // Bottom
-        "resources/skybox/Corona/Back.png",    // Back (swapped)
-        "resources/skybox/Corona/Front.png"    // Front (swapped)
+        "resources/skybox/Corona/Back.png",    // Back
+        "resources/skybox/Corona/Front.png"    // Front
     };
     Skybox skybox(faces);
 
@@ -136,16 +139,56 @@ int main()
         lightingShader.setMat4("view", camera.getViewMatrix());
         lightingShader.setMat4("projection", camera.getProjectionMatrix(SCR_WIDTH, SCR_HEIGHT));
         lightingShader.setVec3("viewPos", camera.Position);
-        lightingShader.setBool("useTexture", true);
 
         // Set lighting uniforms
         lightManager.updateLighting(lightingShader);
 
-        // Render models with scaling
+        // Set additional uniforms for lights
+        lightingShader.setVec3("spotLight.position", camera.Position);
+        lightingShader.setVec3("spotLight.direction", camera.Front);
+
+        // Render garden plants
         glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(modelScaleFactor));  // Apply scaling
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.0f, 0.0f, -2.0f));  // Adjust position
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
         lightingShader.setMat4("model", modelMatrix);
-        model.Draw(lightingShader);
+        gardenPlant.Draw(lightingShader);
+
+        modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(2.0f, 0.0f, -2.0f));  // Adjust position
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
+        lightingShader.setMat4("model", modelMatrix);
+        gardenPlant.Draw(lightingShader);
+
+        // Render trees
+        modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.0f, 0.0f, 2.0f));  // Adjust position
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
+        lightingShader.setMat4("model", modelMatrix);
+        tree.Draw(lightingShader);
+
+        modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(2.0f, 0.0f, 2.0f));  // Adjust position
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
+        lightingShader.setMat4("model", modelMatrix);
+        tree.Draw(lightingShader);
+
+        // Render statue in the middle
+        modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));  // Center position
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
+        lightingShader.setMat4("model", modelMatrix);
+        statue.Draw(lightingShader);
+
+        // Render the reflective model
+        reflectionShader.use();
+        reflectionShader.setMat4("view", camera.getViewMatrix());
+        reflectionShader.setMat4("projection", camera.getProjectionMatrix(SCR_WIDTH, SCR_HEIGHT));
+        reflectionShader.setVec3("cameraPos", camera.Position);
+        reflectionShader.setMat4("model", modelMatrix); // Assuming same model matrix for simplicity
+        reflectionShader.setBool("useTexture", true);
+        reflectionShader.setInt("skybox", 0); // Bind the skybox texture to unit 0
+        statue.Draw(reflectionShader);  // Changed the reflective model to the statue
 
         // Render skybox
         glDepthFunc(GL_LEQUAL);
@@ -214,13 +257,11 @@ void toggleWireframeMode()
 void toggleCursorVisibility(GLFWwindow* window)
 {
     cursorVisible = !cursorVisible;
-    if (cursorVisible)
-    {
+    if (cursorVisible) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        firstMouse = true; // Reset firstMouse to avoid large jumps in the camera view
+        firstMouse = true; // Reset firstMouse when showing cursor
     }
-    else
-    {
+    else {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 }

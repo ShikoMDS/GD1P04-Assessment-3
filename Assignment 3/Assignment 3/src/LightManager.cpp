@@ -37,42 +37,24 @@ void LightManager::togglePointLights()
     pointLightsOn = !pointLightsOn;
     if (pointLightsOn)
     {
-        for (int i = 0; i < 2; ++i)
-        {
-            pointLights[i].color = glm::vec3(1.0f, 0.5f, 0.31f);
-        }
+        pointLights[0].color = glm::vec3(1.0f, 0.5f, 0.31f);
+        pointLights[1].color = glm::vec3(0.5f, 0.5f, 1.0f);
     }
     else
     {
-        for (int i = 0; i < 2; ++i)
-        {
-            pointLights[i].color = glm::vec3(0.0f);
-        }
+        pointLights[0].color = glm::vec3(0.0f);
+        pointLights[1].color = glm::vec3(0.0f);
     }
 }
 
 void LightManager::toggleDirectionalLight()
 {
     directionalLightOn = !directionalLightOn;
-    if (directionalLightOn)
-    {
-        directionalLight.color = glm::vec3(0.4f, 0.4f, 0.4f);
-    }
-    else
-    {
-        directionalLight.color = glm::vec3(0.0f);
-    }
+    directionalLight.color = directionalLightOn ? glm::vec3(0.4f, 0.4f, 0.4f) : glm::vec3(0.0f);
 }
 
 void LightManager::toggleSpotLight()
 {
     spotLightOn = !spotLightOn;
-    if (spotLightOn)
-    {
-        spotLight.color = glm::vec3(1.0f, 1.0f, 1.0f);
-    }
-    else
-    {
-        spotLight.color = glm::vec3(0.0f);
-    }
+    spotLight.color = spotLightOn ? glm::vec3(1.0f, 1.0f, 1.0f) : glm::vec3(0.0f);
 }

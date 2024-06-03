@@ -71,8 +71,8 @@ void Camera::ProcessMouseScroll(float yoffset)
     Zoom -= yoffset;
     if (Zoom < 1.0f)
         Zoom = 1.0f;
-    if (Zoom > 45.0f)
-        Zoom = 45.0f;
+    if (Zoom > 90.0f) // Adjusted to allow for more zoom out
+        Zoom = 90.0f;
 }
 
 void Camera::updateCameraVectors()

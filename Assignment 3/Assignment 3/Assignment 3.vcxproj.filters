@@ -42,6 +42,8 @@
     <None Include="resources\shaders\FragmentShader.frag" />
     <None Include="resources\shaders\SkyboxFragmentShader.frag" />
     <None Include="resources\shaders\SkyboxVertexShader.vert" />
+    <None Include="resources\shaders\ReflectionVertexShader.vert" />
+    <None Include="resources\shaders\ReflectionFragmentShader.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Skybox.h">
