@@ -2,7 +2,7 @@
 
 InputManager::InputManager(Camera& camera, LightManager& lightManager)
     : camera(camera), lightManager(lightManager), wireframe(false), cursorVisible(false),
-      lastX(800 / 2.0f), lastY(600 / 2.0f), firstMouse(true) {
+    lastX(800 / 2.0f), lastY(600 / 2.0f), firstMouse(true) {
     keyState = {
         {GLFW_KEY_1, false},
         {GLFW_KEY_2, false},
@@ -61,7 +61,8 @@ void InputManager::toggleCursorVisibility(GLFWwindow* window) {
     if (cursorVisible) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         firstMouse = true; // Reset firstMouse when showing cursor
-    } else {
+    }
+    else {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 }

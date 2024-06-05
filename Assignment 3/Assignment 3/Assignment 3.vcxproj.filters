@@ -39,19 +39,14 @@
     <ClCompile Include="src\InputManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="resources\shaders\VertexShader.vert" />
+    <None Include="resources\shaders\FragmentShader.frag" />
     <None Include="resources\shaders\SkyboxFragmentShader.frag" />
     <None Include="resources\shaders\SkyboxVertexShader.vert" />
     <None Include="resources\shaders\ReflectionVertexShader.vert" />
     <None Include="resources\shaders\ReflectionFragmentShader.frag" />
-    <None Include="resources\shaders\BlinnPhong.frag" />
-    <None Include="resources\shaders\BlinnPhong.vert" />
-    <None Include="resources\shaders\PointLight.frag" />
-    <None Include="resources\shaders\PointLight.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Skybox.h">
@@ -75,31 +70,5 @@
     <ClInclude Include="include\InputManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="resources\textures\PolygonAncientWorlds_Statue_01.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="resources\textures\PolygonAncientWorlds_Texture_01_A.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="resources\textures\PolygonAncientWorlds_Texture_01_B.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="resources\textures\PolygonSciFiSpace_Texture_01_A.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="resources\textures\PolygonSciFiSpace_Texture_01_B.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="resources\textures\PolygonScifiWorlds_Texture_01_A.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="resources\textures\PolygonScifiWorlds_Texture_01_B.png">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>

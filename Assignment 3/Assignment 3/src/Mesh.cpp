@@ -10,7 +10,8 @@ void Mesh::Draw(const Shader& shader) const
 {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
-    for (unsigned int i = 0; i < textures.size(); i++) {
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
         glActiveTexture(GL_TEXTURE0 + i);
         std::string number;
         std::string name = textures[i].type;
@@ -20,7 +21,7 @@ void Mesh::Draw(const Shader& shader) const
             number = std::to_string(specularNr++);
 
         shader.setInt((name + number).c_str(), i);
-        textures[i].bind(i);
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
 
     glBindVertexArray(VAO);
@@ -44,7 +45,7 @@ void Mesh::setupMesh()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
     glEnableVertexAttribArray(2);

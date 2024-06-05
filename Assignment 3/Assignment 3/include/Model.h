@@ -1,26 +1,30 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+
+#include <glew.h>
+#include <glm.hpp>
 #include <string>
-#include <tiny_obj_loader.h>
 #include <vector>
-#include "Mesh.h"
-#include "Shader.h"
+#include "shader.h"
+#include "mesh.h"
 
-class Model {
+class Model
+{
 public:
     Model(const std::string& modelPath, const std::string& texturePath);
     void Draw(const Shader& shader) const;
-    unsigned int getTextureID() const;
-    unsigned int getSpecularTextureID() const;
 
 private:
     std::vector<Mesh> meshes;
+    std::string directory;
+    std::vector<Texture> textures_loaded;
     std::string texturePath;
 
     void loadModel(const std::string& path);
-    void processNode(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib);
-    Mesh processMesh(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib);
+    void processNode();
+    Mesh processMesh();
 };
 
-#endif // MODEL_H
+unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false);
