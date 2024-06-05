@@ -1,10 +1,11 @@
-#pragma once
+#ifndef MESH_H
+#define MESH_H
 
-#include <glew.h>
-#include <glm.hpp>
-#include <string>
 #include <vector>
-#include "shader.h"
+#include <glm.hpp>
+#include <glew.h>
+#include "Shader.h"
+#include "Texture.h"
 
 struct Vertex {
     glm::vec3 Position;
@@ -12,14 +13,9 @@ struct Vertex {
     glm::vec2 TexCoords;
 };
 
-struct Texture {
-    unsigned int id;
-    std::string type;
-    std::string path;
-};
-
 class Mesh {
 public:
+    // Mesh data
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
@@ -29,7 +25,10 @@ public:
     void Draw(const Shader& shader) const;
 
 private:
+    // Render data
     unsigned int VAO, VBO, EBO;
 
     void setupMesh();
 };
+
+#endif // MESH_H

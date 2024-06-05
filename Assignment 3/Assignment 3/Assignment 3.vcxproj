@@ -154,27 +154,42 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\LightManager.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Model.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
+    <ClCompile Include="src\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\FragmentShader.frag" />
+    <None Include="resources\shaders\BlinnPhong.frag" />
+    <None Include="resources\shaders\BlinnPhong.vert" />
+    <None Include="resources\shaders\PointLight.frag" />
+    <None Include="resources\shaders\PointLight.vert" />
     <None Include="resources\shaders\ReflectionFragmentShader.frag" />
     <None Include="resources\shaders\ReflectionVertexShader.vert" />
     <None Include="resources\shaders\SkyboxFragmentShader.frag" />
     <None Include="resources\shaders\SkyboxVertexShader.vert" />
-    <None Include="resources\shaders\VertexShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Camera.h" />
+    <ClInclude Include="include\InputManager.h" />
     <ClInclude Include="include\LightManager.h" />
     <ClInclude Include="include\Mesh.h" />
     <ClInclude Include="include\Model.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\Skybox.h" />
+    <ClInclude Include="include\Texture.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\textures\PolygonAncientWorlds_Statue_01.png" />
+    <Image Include="resources\textures\PolygonAncientWorlds_Texture_01_A.png" />
+    <Image Include="resources\textures\PolygonAncientWorlds_Texture_01_B.png" />
+    <Image Include="resources\textures\PolygonSciFiSpace_Texture_01_A.png" />
+    <Image Include="resources\textures\PolygonSciFiSpace_Texture_01_B.png" />
+    <Image Include="resources\textures\PolygonScifiWorlds_Texture_01_A.png" />
+    <Image Include="resources\textures\PolygonScifiWorlds_Texture_01_B.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

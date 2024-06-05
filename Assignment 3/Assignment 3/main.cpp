@@ -1,7 +1,6 @@
 #include <glew.h>
 #include <glfw3.h>
 #include <iostream>
-#include <unordered_map>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include "Shader.h"
@@ -9,289 +8,211 @@
 #include "LightManager.h"
 #include "Model.h"
 #include "Skybox.h"
+#include "InputManager.h"
 
 // Settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+constexpr unsigned int ScrWidth = 800;
+constexpr unsigned int ScrHeight = 600;
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 5.0f)); // Set initial position a bit further back to allow zooming in and out
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
+Camera GCamera(glm::vec3(0.0f, 0.0f, 5.0f));
 
 // Timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+float DeltaTime = 0.0f;
+float LastFrame = 0.0f;
 
 // Lighting
-LightManager lightManager;
+LightManager GLightManager;
 
-// Debounce state
-std::unordered_map<int, bool> keyState = {
-    {GLFW_KEY_1, false},
-    {GLFW_KEY_2, false},
-    {GLFW_KEY_3, false},
-    {GLFW_KEY_4, false},
-    {GLFW_KEY_5, false}
-};
-std::unordered_map<int, bool> keyToggleState;
+// Input Manager
+InputManager inputManager(GCamera, GLightManager);
 
-// Wireframe mode
-bool wireframe = false;
+// Scale factors for the models
+constexpr float ModelScaleFactor = 0.01f;
+constexpr float PlantScaleFactor = 0.005f;
+constexpr float MineLightScaleFactor = 0.005f;
 
-// Cursor visibility
-bool cursorVisible = false;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    inputManager.framebufferSizeCallback(window, width, height);
+}
 
-// Scale factor for the model
-const float modelScaleFactor = 0.01f;  // Adjust this value to scale down the model
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    inputManager.mouseCallback(window, xpos, ypos);
+}
 
-void processInput(GLFWwindow* window);
-void toggleWireframeMode();
-void toggleCursorVisibility(GLFWwindow* window);
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    inputManager.scrollCallback(window, xoffset, yoffset);
+}
 
 int main()
 {
-    // Initialize and configure GLFW
     if (!glfwInit())
     {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
+        std::cerr << "Failed to initialize GLFW" << '\n';
         return -1;
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4); // Enable MSAA
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
-    // Create a windowed mode window and its OpenGL context
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL Demo", NULL, NULL);
-    if (!window)
+    GLFWwindow* Window = glfwCreateWindow(ScrWidth, ScrHeight, "OpenGL Demo", nullptr, nullptr);
+    if (!Window)
     {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        std::cerr << "Failed to create GLFW window" << '\n';
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    glfwMakeContextCurrent(Window);
+    glfwSetFramebufferSizeCallback(Window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(Window, mouse_callback);
+    glfwSetScrollCallback(Window, scroll_callback);
 
-    // Capture the mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // Initialize GLEW
     if (glewInit() != GLEW_OK)
     {
-        std::cerr << "Failed to initialize GLEW" << std::endl;
+        std::cerr << "Failed to initialize GLEW" << '\n';
         return -1;
     }
 
-    // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE); // Enable back-face culling
-    glEnable(GL_MULTISAMPLE); // Enable MSAA
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_MULTISAMPLE);
 
-    // Build and compile shaders
-    Shader lightingShader("resources/shaders/VertexShader.vert", "resources/shaders/FragmentShader.frag");
-    Shader reflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
-    Shader skyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
+    Shader LightingShader("resources/shaders/BlinnPhong.vert", "resources/shaders/BlinnPhong.frag");
+    Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
+    Shader SkyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
+    Shader PointLightShader("resources/shaders/PointLight.vert", "resources/shaders/PointLight.frag");
 
-    // Load models
-    Model gardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    Model tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    Model statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
+    Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model Tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model MineLight("resources/models/SciFiSpace/SM_Prop_Mine_01.obj", "PolygonSciFiSpace_Texture_01_A.png");
 
-    // Load skybox
-    std::vector<std::string> faces
+    std::vector<std::string> Faces
     {
-        "resources/skybox/Corona/Right.png",   // Right
-        "resources/skybox/Corona/Left.png",    // Left
-        "resources/skybox/Corona/Top.png",     // Top
-        "resources/skybox/Corona/Bottom.png",  // Bottom
-        "resources/skybox/Corona/Back.png",    // Back
-        "resources/skybox/Corona/Front.png"    // Front
+        "resources/skybox/Corona/Right.png",
+        "resources/skybox/Corona/Left.png",
+        "resources/skybox/Corona/Top.png",
+        "resources/skybox/Corona/Bottom.png",
+        "resources/skybox/Corona/Back.png",
+        "resources/skybox/Corona/Front.png"
     };
-    Skybox skybox(faces);
+    Skybox Skybox(Faces);
 
-    // Initialize lighting
-    lightManager.initialize();
+    GLightManager.initialize();
 
-    // Rendering loop
-    while (!glfwWindowShouldClose(window))
+    // Set shader uniforms
+    LightingShader.use();
+    LightingShader.setInt("material.diffuse", 0); // Texture unit 0
+    LightingShader.setInt("material.specular", 1); // Texture unit 1
+
+    while (!glfwWindowShouldClose(Window))
     {
-        // Per-frame time logic
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        float CurrentFrame = static_cast<float>(glfwGetTime());
+        DeltaTime = CurrentFrame - LastFrame;
+        LastFrame = CurrentFrame;
 
-        // Input
-        processInput(window);
+        inputManager.processInput(Window, DeltaTime);
 
-        // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Set shader and pass uniforms
-        lightingShader.use();
-        lightingShader.setMat4("view", camera.getViewMatrix());
-        lightingShader.setMat4("projection", camera.getProjectionMatrix(SCR_WIDTH, SCR_HEIGHT));
-        lightingShader.setVec3("viewPos", camera.Position);
+        LightingShader.use();
+        LightingShader.setVec3("viewPos", GCamera.Position);
+        LightingShader.setMat4("view", GCamera.getViewMatrix());
+        LightingShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+
+        // Update spotlight position and direction
+        LightingShader.setVec3("lights[1].position", GCamera.Position);
+        LightingShader.setVec3("lights[1].direction", GCamera.Front);
 
         // Set lighting uniforms
-        lightManager.updateLighting(lightingShader);
+        GLightManager.updateLighting(LightingShader);
 
-        // Set additional uniforms for lights
-        lightingShader.setVec3("spotLight.position", camera.Position);
-        lightingShader.setVec3("spotLight.direction", camera.Front);
+        auto ModelMatrix = glm::mat4(1.0f);
 
-        // Render garden plants
-        glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.0f, 0.0f, -2.0f));  // Adjust position
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
-        lightingShader.setMat4("model", modelMatrix);
-        gardenPlant.Draw(lightingShader);
+        // Activate the textures
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, GardenPlant.getTextureID()); // Assuming GardenPlant.getTextureID() returns the correct texture ID
 
-        modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(2.0f, 0.0f, -2.0f));  // Adjust position
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
-        lightingShader.setMat4("model", modelMatrix);
-        gardenPlant.Draw(lightingShader);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, GardenPlant.getSpecularTextureID()); // Assuming GardenPlant.getSpecularTextureID() returns the correct texture ID
 
-        // Render trees
-        modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(-2.0f, 0.0f, 2.0f));  // Adjust position
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
-        lightingShader.setMat4("model", modelMatrix);
-        tree.Draw(lightingShader);
+        for (int X = -5; X <= 5; X++) {
+            for (int Z = -5; Z <= 5; Z++) {
+                ModelMatrix = glm::mat4(1.0f);
+                ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z));
+                ModelMatrix = glm::scale(ModelMatrix, glm::vec3(PlantScaleFactor));
+                LightingShader.setMat4("model", ModelMatrix);
+                GardenPlant.Draw(LightingShader);
+            }
+        }
 
-        modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(2.0f, 0.0f, 2.0f));  // Adjust position
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
-        lightingShader.setMat4("model", modelMatrix);
-        tree.Draw(lightingShader);
+        glm::vec3 TreePositions[] = {
+            {-5.0f, -1.0f, -5.0f}, {5.0f, -1.0f, -5.0f},
+            {-5.0f, -1.0f, 5.0f}, {5.0f, -1.0f, 5.0f}
+        };
 
-        // Render statue in the middle
-        modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));  // Center position
-        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.01f));  // Apply scaling
-        lightingShader.setMat4("model", modelMatrix);
-        statue.Draw(lightingShader);
+        for (glm::vec3 Pos : TreePositions) {
+            ModelMatrix = glm::mat4(1.0f);
+            ModelMatrix = glm::translate(ModelMatrix, Pos);
+            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
+            LightingShader.setMat4("model", ModelMatrix);
+            Tree.Draw(LightingShader);
+        }
 
-        // Render the reflective model
-        reflectionShader.use();
-        reflectionShader.setMat4("view", camera.getViewMatrix());
-        reflectionShader.setMat4("projection", camera.getProjectionMatrix(SCR_WIDTH, SCR_HEIGHT));
-        reflectionShader.setVec3("cameraPos", camera.Position);
-        reflectionShader.setMat4("model", modelMatrix); // Assuming same model matrix for simplicity
-        reflectionShader.setBool("useTexture", true);
-        reflectionShader.setInt("skybox", 0); // Bind the skybox texture to unit 0
-        statue.Draw(reflectionShader);  // Changed the reflective model to the statue
+        ModelMatrix = glm::mat4(1.0f);
+        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
+        ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
+        LightingShader.setMat4("model", ModelMatrix);
+        Statue.Draw(LightingShader);
 
-        // Render skybox
+        PointLightShader.use();
+        PointLightShader.setMat4("view", GCamera.getViewMatrix());
+        PointLightShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+
+        glm::vec3 PointLightPositions[] = {
+            { 1.0f, 0.5f, 1.0f },
+            { -1.0f, 0.5f, -1.0f }
+        };
+        glm::vec3 PointLightColors[] = {
+            {1.0f, 0.0f, 0.0f}, // Red light
+            {0.0f, 0.0f, 1.0f}  // Blue light
+        };
+
+        for (int i = 0; i < 2; ++i) {
+            glm::vec3 Pos = PointLightPositions[i];
+            glm::vec3 Color = PointLightColors[i];
+            ModelMatrix = glm::mat4(1.0f);
+            ModelMatrix = glm::translate(ModelMatrix, Pos);
+            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(MineLightScaleFactor));
+            PointLightShader.setMat4("model", ModelMatrix);
+            PointLightShader.setVec3("lightColor", Color);
+            MineLight.Draw(PointLightShader);
+        }
+
+        ReflectionShader.use();
+        ReflectionShader.setMat4("view", GCamera.getViewMatrix());
+        ReflectionShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+        ReflectionShader.setVec3("cameraPos", GCamera.Position);
+        ReflectionShader.setMat4("model", ModelMatrix);
+        ReflectionShader.setBool("useTexture", true);
+        ReflectionShader.setInt("skybox", 0);
+        // Statue.Draw(ReflectionShader); // Commenting this out to remove extra statue rendering
+
         glDepthFunc(GL_LEQUAL);
-        skyboxShader.use();
-        skyboxShader.setMat4("view", glm::mat4(glm::mat3(camera.getViewMatrix())));
-        skyboxShader.setMat4("projection", camera.getProjectionMatrix(SCR_WIDTH, SCR_HEIGHT));
-        skybox.Draw(skyboxShader);
+        SkyboxShader.use();
+        SkyboxShader.setMat4("view", glm::mat4(glm::mat3(GCamera.getViewMatrix())));
+        SkyboxShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+        Skybox.Draw(SkyboxShader);
         glDepthFunc(GL_LESS);
 
-        // Swap buffers and poll IO events
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
-    // Clean up
     glfwTerminate();
     return 0;
-}
-
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    // Debounce toggles
-    for (auto& [key, pressed] : keyState) {
-        if (glfwGetKey(window, key) == GLFW_PRESS) {
-            if (!pressed) {
-                pressed = true;
-                keyToggleState[key] = !keyToggleState[key];
-                if (key == GLFW_KEY_1) lightManager.togglePointLights();
-                if (key == GLFW_KEY_2) lightManager.toggleDirectionalLight();
-                if (key == GLFW_KEY_3) lightManager.toggleSpotLight();
-                if (key == GLFW_KEY_4) toggleWireframeMode();
-                if (key == GLFW_KEY_5) toggleCursorVisibility(window);
-            }
-        }
-        else {
-            pressed = false;
-        }
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        camera.ProcessKeyboard(UP, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        camera.ProcessKeyboard(DOWN, deltaTime);
-}
-
-void toggleWireframeMode()
-{
-    wireframe = !wireframe;
-    if (wireframe)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
-
-void toggleCursorVisibility(GLFWwindow* window)
-{
-    cursorVisible = !cursorVisible;
-    if (cursorVisible) {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        firstMouse = true; // Reset firstMouse when showing cursor
-    }
-    else {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    if (cursorVisible) return; // Skip camera movement when cursor is visible
-
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // Reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
