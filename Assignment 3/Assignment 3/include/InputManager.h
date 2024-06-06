@@ -2,7 +2,6 @@
 
 #include <glew.h>
 #include <glfw3.h>
-#include <unordered_map>
 #include "Camera.h"
 #include "LightManager.h"
 
@@ -17,15 +16,10 @@ public:
 private:
     Camera& camera;
     LightManager& lightManager;
-    std::unordered_map<int, bool> keyState;
-    std::unordered_map<int, bool> keyToggleState;
-    bool wireframe;
-    bool cursorVisible;
-    float lastX;
-    float lastY;
-    bool firstMouse;
-
-    void toggleWireframeMode();
+    bool cursorVisible = false;
+    bool firstMouse = true;
+    float lastX = 400, lastY = 300;
     void toggleCursorVisibility(GLFWwindow* window);
+    void handleKeyInput(GLFWwindow* window, float deltaTime);
+    void toggleWireframeMode();
 };
-

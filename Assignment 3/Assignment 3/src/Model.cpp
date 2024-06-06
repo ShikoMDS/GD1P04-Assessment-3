@@ -1,12 +1,15 @@
 #include "Model.h"
 #include <iostream>
 
-#include "tiny_obj_loader.h"
-#include "stb_image.h"
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 Model::Model(const std::string& modelPath, const std::string& texturePath)
+    : texturePath(texturePath)
 {
-    this->texturePath = texturePath;
     loadModel(modelPath);
 }
 
@@ -18,7 +21,6 @@ void Model::Draw(const Shader& shader) const
 
 void Model::loadModel(const std::string& path)
 {
-    // TinyObjLoader code to load model
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -73,7 +75,7 @@ void Model::loadModel(const std::string& path)
     }
 }
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
+unsigned int Model::TextureFromFile(const char* path, const std::string& directory, bool gamma)
 {
     std::string filename = std::string(path);
 
