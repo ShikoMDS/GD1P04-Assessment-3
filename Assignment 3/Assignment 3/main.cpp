@@ -91,11 +91,14 @@ int main()
     glEnable(GL_MULTISAMPLE);
 
     std::cout << "Building and compiling shaders..." << std::endl;
-    // Build and compile shaders
-    Shader LightingShader("resources/shaders/PointLightVertexShader.vert", "resources/shaders/PointLightFragmentShader.frag");
-    Shader SimpleShader("resources/shaders/SimpleVertexShader.vert", "resources/shaders/SimpleFragmentShader.frag");
-    Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
+    // Skybox
     Shader SkyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
+    // Point lights
+    Shader SimpleShader("resources/shaders/SimpleVertexShader.vert", "resources/shaders/SimpleFragmentShader.frag");
+    // Default shader for other objects
+    Shader DefaultShader("resources/shaders/DefaultVertexShader.vert", "resources/shaders/DefaultFragmentShader.frag");
+    // Reflective model (object with windows)
+    Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
 
     std::cout << "Loading models..." << std::endl;
     // Load models
@@ -120,6 +123,9 @@ int main()
     std::cout << "Initializing lighting..." << std::endl;
     // Initialize lighting
     GLightManager.initialize();
+
+    // Set the directional light direction to a fixed position (example: from the front above)
+    GLightManager.setDirectionalLightDirection(glm::vec3(0.0f, -1.0f, -1.0f));
 
     // Define point light positions and colors using the mines
     glm::vec3 pointLightPositions[] = {
@@ -147,13 +153,16 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Set shader and pass uniforms
-        LightingShader.use();
-        LightingShader.setMat4("view", GCamera.getViewMatrix());
-        LightingShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        LightingShader.setVec3("viewPos", GCamera.Position);
+        DefaultShader.use();
+        DefaultShader.setMat4("view", GCamera.getViewMatrix());
+        DefaultShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+        DefaultShader.setVec3("viewPos", GCamera.Position);
+
+        // Set spotlight position and direction
+        GLightManager.setSpotLightPosition(GCamera.Position, GCamera.Front);
 
         // Set point light uniforms using mines
-        GLightManager.updateLighting(LightingShader);
+        GLightManager.updateLighting(DefaultShader);
 
         // Render garden plants as ground
         auto ModelMatrix = glm::mat4(1.0f);
@@ -163,8 +172,8 @@ int main()
                 ModelMatrix = glm::mat4(1.0f);
                 ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z));
                 ModelMatrix = glm::scale(ModelMatrix, glm::vec3(PlantScaleFactor));
-                LightingShader.setMat4("model", ModelMatrix);
-                GardenPlant.Draw(LightingShader);
+                DefaultShader.setMat4("model", ModelMatrix);
+                GardenPlant.Draw(DefaultShader);
             }
         }
 
@@ -178,16 +187,16 @@ int main()
             ModelMatrix = glm::mat4(1.0f);
             ModelMatrix = glm::translate(ModelMatrix, Pos);
             ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
-            LightingShader.setMat4("model", ModelMatrix);
-            Tree.Draw(LightingShader);
+            DefaultShader.setMat4("model", ModelMatrix);
+            Tree.Draw(DefaultShader);
         }
 
         // Render statue in the middle
         ModelMatrix = glm::mat4(1.0f);
         ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
         ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
-        LightingShader.setMat4("model", ModelMatrix);
-        Statue.Draw(LightingShader);
+        DefaultShader.setMat4("model", ModelMatrix);
+        Statue.Draw(DefaultShader);
 
         // Render mines as point light sources
         SimpleShader.use();
@@ -199,7 +208,14 @@ int main()
             ModelMatrix = glm::translate(ModelMatrix, pointLightPositions[i]);
             ModelMatrix = glm::scale(ModelMatrix, glm::vec3(MineScaleFactor));
             SimpleShader.setMat4("model", ModelMatrix);
-            SimpleShader.setVec3("color", pointLightColors[i]);
+
+            // Check if point lights are on and set color accordingly
+            if (GLightManager.arePointLightsOn()) {
+                SimpleShader.setVec3("color", pointLightColors[i]);
+            }
+            else {
+                SimpleShader.setVec3("color", glm::vec3(0.0f, 0.0f, 0.0f)); // Lights off
+            }
             Mine.Draw(SimpleShader);
         }
 

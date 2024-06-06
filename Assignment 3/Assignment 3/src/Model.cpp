@@ -8,8 +8,8 @@
 #include <stb_image.h>
 
 Model::Model(const std::string& modelPath, const std::string& texturePath)
-    : texturePath(texturePath)
 {
+    this->texturePath = texturePath;
     loadModel(modelPath);
 }
 
@@ -21,6 +21,7 @@ void Model::Draw(const Shader& shader) const
 
 void Model::loadModel(const std::string& path)
 {
+    // TinyObjLoader code to load model
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
