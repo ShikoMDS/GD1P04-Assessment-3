@@ -3,6 +3,8 @@
 #include <iostream>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <gtx/string_cast.hpp>
 #include "Shader.h"
 #include "Camera.h"
 #include "LightManager.h"
@@ -30,7 +32,7 @@ InputManager inputManager(GCamera, GLightManager);
 // Scale factors for the models
 constexpr float ModelScaleFactor = 0.01f;
 constexpr float PlantScaleFactor = 0.005f;
-constexpr float MineScaleFactor = 0.0025f;
+constexpr float LightScaleFactor = 1.0f;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     inputManager.framebufferSizeCallback(window, width, height);
@@ -97,15 +99,14 @@ int main()
     Shader SimpleShader("resources/shaders/SimpleVertexShader.vert", "resources/shaders/SimpleFragmentShader.frag");
     // Default shader for other objects
     Shader DefaultShader("resources/shaders/DefaultVertexShader.vert", "resources/shaders/DefaultFragmentShader.frag");
-    // Reflective model (object with windows)
-    Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
 
     std::cout << "Loading models..." << std::endl;
     // Load models
     Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
     Model Tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
     Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    Model Mine("resources/models/SciFiSpace/SM_Prop_Mine_01.obj", "resources/textures/PolygonSciFiSpace_Texture_01_A.png");
+    // Point Lights
+    Model Light("resources/models/Sphere/Sphere_HighPoly.obj", "resources/textures/PolygonSciFiSpace_Texture_01_A.png");
 
     std::cout << "Loading skybox..." << std::endl;
     // Load skybox
@@ -115,10 +116,11 @@ int main()
         "resources/skybox/Corona/Left.png",
         "resources/skybox/Corona/Top.png",
         "resources/skybox/Corona/Bottom.png",
+        // WHY ARE THESE NEEDING TO BE SWAPPED?????
         "resources/skybox/Corona/Back.png",
         "resources/skybox/Corona/Front.png"
     };
-    Skybox Skybox(Faces);
+    Skybox skybox(Faces);
 
     std::cout << "Initializing lighting..." << std::endl;
     // Initialize lighting
@@ -173,11 +175,11 @@ int main()
                 ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z));
                 ModelMatrix = glm::scale(ModelMatrix, glm::vec3(PlantScaleFactor));
                 DefaultShader.setMat4("model", ModelMatrix);
+                std::cout << "Plant ModelMatrix: " << glm::to_string(ModelMatrix) << std::endl;
                 GardenPlant.Draw(DefaultShader);
             }
         }
 
-        // Render trees around the scene
         glm::vec3 TreePositions[] = {
             {-5.0f, -1.0f, -5.0f}, {5.0f, -1.0f, -5.0f},
             {-5.0f, -1.0f, 5.0f}, {5.0f, -1.0f, 5.0f}
@@ -188,14 +190,15 @@ int main()
             ModelMatrix = glm::translate(ModelMatrix, Pos);
             ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
             DefaultShader.setMat4("model", ModelMatrix);
+            std::cout << "Tree ModelMatrix: " << glm::to_string(ModelMatrix) << std::endl;
             Tree.Draw(DefaultShader);
         }
 
-        // Render statue in the middle
         ModelMatrix = glm::mat4(1.0f);
         ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
         ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
         DefaultShader.setMat4("model", ModelMatrix);
+        std::cout << "Statue ModelMatrix: " << glm::to_string(ModelMatrix) << std::endl;
         Statue.Draw(DefaultShader);
 
         // Render mines as point light sources
@@ -206,7 +209,7 @@ int main()
         for (int i = 0; i < 2; ++i) {
             ModelMatrix = glm::mat4(1.0f);
             ModelMatrix = glm::translate(ModelMatrix, pointLightPositions[i]);
-            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(MineScaleFactor));
+            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(LightScaleFactor));
             SimpleShader.setMat4("model", ModelMatrix);
 
             // Check if point lights are on and set color accordingly
@@ -216,25 +219,15 @@ int main()
             else {
                 SimpleShader.setVec3("color", glm::vec3(0.0f, 0.0f, 0.0f)); // Lights off
             }
-            Mine.Draw(SimpleShader);
+            Light.Draw(SimpleShader);
         }
-
-        // Render the reflective model
-        ReflectionShader.use();
-        ReflectionShader.setMat4("view", GCamera.getViewMatrix());
-        ReflectionShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        ReflectionShader.setVec3("cameraPos", GCamera.Position);
-        ReflectionShader.setMat4("model", ModelMatrix);
-        ReflectionShader.setBool("useTexture", true);
-        ReflectionShader.setInt("skybox", 0);
-        Statue.Draw(ReflectionShader);
 
         // Render skybox
         glDepthFunc(GL_LEQUAL);
         SkyboxShader.use();
         SkyboxShader.setMat4("view", glm::mat4(glm::mat3(GCamera.getViewMatrix())));
         SkyboxShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        Skybox.Draw(SkyboxShader);
+        skybox.Draw(SkyboxShader);
         glDepthFunc(GL_LESS);
 
         // Swap buffers and poll IO events

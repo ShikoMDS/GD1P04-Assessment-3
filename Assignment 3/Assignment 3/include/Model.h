@@ -7,11 +7,11 @@
 #include "shader.h"
 #include "mesh.h"
 
-class Model
-{
+class Model {
 public:
     Model(const std::string& modelPath, const std::string& texturePath);
-    void Draw(const Shader& shader) const;
+
+    void Draw(Shader& shader);
 
 private:
     std::vector<Mesh> meshes;

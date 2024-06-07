@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include <iostream>
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
     : vertices(vertices), indices(indices), textures(textures)
@@ -6,33 +7,22 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     setupMesh();
 }
 
-void Mesh::Draw(const Shader& shader) const
-{
-    // Bind appropriate textures
-    unsigned int diffuseNr = 1;
-    for (unsigned int i = 0; i < textures.size(); i++)
-    {
-        glActiveTexture(GL_TEXTURE0 + i); // Active proper texture unit before binding
-        std::string number;
-        std::string name = textures[i].type;
-        if (name == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
-
-        shader.setInt((name + number).c_str(), i);
+void Mesh::Draw(const Shader& shader) {
+    for (unsigned int i = 0; i < textures.size(); i++) {
+        glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        shader.setInt(("texture_diffuse" + std::to_string(i)).c_str(), i);
+        std::cout << "Binding Texture ID: " << textures[i].id << " to texture unit " << i << std::endl;
     }
 
-    // Draw mesh
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    // Always good practice to set everything back to defaults once configured
     glActiveTexture(GL_TEXTURE0);
 }
 
-void Mesh::setupMesh()
-{
+void Mesh::setupMesh() {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
