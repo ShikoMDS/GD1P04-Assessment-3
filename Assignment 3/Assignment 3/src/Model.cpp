@@ -1,24 +1,23 @@
 #include "Model.h"
 #include <iostream>
+#include <unordered_map>
 
 #include "tiny_obj_loader.h"
 #include "stb_image.h"
 
-Model::Model(const std::string& modelPath, const std::string& texturePath)
-{
+Model::Model(const std::string& modelPath, const std::string& texturePath) {
     this->texturePath = texturePath;
     loadModel(modelPath);
 }
 
-void Model::Draw(const Shader& shader) const
-{
+void Model::Draw(const Shader& shader) const {
     for (const auto& mesh : meshes)
         mesh.Draw(shader);
 }
 
-void Model::loadModel(const std::string& path)
-{
-    // TinyObjLoader code to load model
+void Model::loadModel(const std::string& path) {
+    stbi_set_flip_vertically_on_load(true);
+
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -39,51 +38,65 @@ void Model::loadModel(const std::string& path)
         return;
     }
 
-    // Process shapes
-    for (const auto& shape : shapes)
-    {
+    for (const auto& shape : shapes) {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
         std::vector<Texture> textures;
 
-        // Process vertices
-        for (size_t v = 0; v < attrib.vertices.size() / 3; v++) {
-            Vertex vertex;
-            vertex.Position = glm::vec3(attrib.vertices[3 * v + 0], attrib.vertices[3 * v + 1], attrib.vertices[3 * v + 2]);
-            vertex.Normal = glm::vec3(attrib.normals[3 * v + 0], attrib.normals[3 * v + 1], attrib.normals[3 * v + 2]);
-            vertex.TexCoords = glm::vec2(attrib.texcoords[2 * v + 0], attrib.texcoords[2 * v + 1]);
-            vertices.push_back(vertex);
-        }
+        std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
-        // Process indices
         for (const auto& index : shape.mesh.indices) {
-            indices.push_back(index.vertex_index);
+            Vertex vertex = {};
+
+            vertex.Position = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            if (index.normal_index >= 0) {
+                vertex.Normal = {
+                    attrib.normals[3 * index.normal_index + 0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2]
+                };
+            }
+
+            if (index.texcoord_index >= 0) {
+                vertex.TexCoords = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+            }
+
+            if (uniqueVertices.count(vertex) == 0) {
+                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(vertex);
+            }
+
+            indices.push_back(uniqueVertices[vertex]);
         }
 
-        // Load texture
         Texture texture;
         texture.id = TextureFromFile(texturePath.c_str(), directory);
         texture.type = "texture_diffuse";
         texture.path = texturePath;
         textures.push_back(texture);
 
-        // Create mesh and add to meshes vector
         Mesh mesh(vertices, indices, textures);
         meshes.push_back(mesh);
     }
 }
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
-{
-    std::string filename = std::string(path);
+unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma) {
+    std::string filename = directory + '/' + std::string(path);
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
     unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    if (data)
-    {
+    if (data) {
         GLenum format;
         if (nrComponents == 1)
             format = GL_RED;
@@ -103,8 +116,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 
         stbi_image_free(data);
     }
-    else
-    {
+    else {
         std::cerr << "Texture failed to load at path: " << path << std::endl;
         stbi_image_free(data);
     }

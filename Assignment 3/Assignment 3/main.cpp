@@ -86,13 +86,13 @@ int main()
 
     // Build and compile shaders
     Shader LightingShader("resources/shaders/VertexShader.vert", "resources/shaders/FragmentShader.frag");
-    Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
+    //Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
     Shader SkyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
 
     // Load models
     Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
     Model Tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
+    Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Statue_01.png");
 
     // Load skybox
     std::vector<std::string> Faces
@@ -171,15 +171,15 @@ int main()
         LightingShader.setMat4("model", ModelMatrix);
         Statue.Draw(LightingShader);
 
-        // Render the reflective model
-        ReflectionShader.use();
-        ReflectionShader.setMat4("view", GCamera.getViewMatrix());
-        ReflectionShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        ReflectionShader.setVec3("cameraPos", GCamera.Position);
-        ReflectionShader.setMat4("model", ModelMatrix);
-        ReflectionShader.setBool("useTexture", true);
-        ReflectionShader.setInt("skybox", 0); // Bind the skybox texture to unit 0
-        Statue.Draw(ReflectionShader);
+        //// Render the reflective model
+        //ReflectionShader.use();
+        //ReflectionShader.setMat4("view", GCamera.getViewMatrix());
+        //ReflectionShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+        //ReflectionShader.setVec3("cameraPos", GCamera.Position);
+        //ReflectionShader.setMat4("model", ModelMatrix);
+        //ReflectionShader.setBool("useTexture", true);
+        //ReflectionShader.setInt("skybox", 0); // Bind the skybox texture to unit 0
+        //Statue.Draw(ReflectionShader);
 
         // Render skybox
         glDepthFunc(GL_LEQUAL);
