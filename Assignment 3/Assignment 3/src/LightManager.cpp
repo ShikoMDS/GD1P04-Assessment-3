@@ -58,3 +58,18 @@ void LightManager::toggleSpotLight()
     spotLightOn = !spotLightOn;
     spotLight.color = spotLightOn ? glm::vec3(1.0f, 1.0f, 1.0f) : glm::vec3(0.0f);
 }
+
+void LightManager::setSpotLightPosition(const glm::vec3& position)
+{
+    spotLight.position = position;
+}
+
+void LightManager::setSpotLightDirection(const glm::vec3& direction)
+{
+    spotLight.direction = direction;
+}
+
+SpotLight LightManager::getSpotLight() const
+{
+    return spotLight;
+}

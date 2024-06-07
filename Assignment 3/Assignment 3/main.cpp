@@ -151,6 +151,10 @@ int main()
         LightingShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
         LightingShader.setVec3("viewPos", GCamera.Position);
 
+        // Update spotlight properties based on camera position and direction
+        GLightManager.setSpotLightPosition(GCamera.Position);
+        GLightManager.setSpotLightDirection(GCamera.Front);
+
         // Set material properties
         LightingShader.setVec3("material.ambient", material.ambient);
         LightingShader.setVec3("material.diffuse", material.diffuse);
