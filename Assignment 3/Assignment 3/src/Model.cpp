@@ -1,13 +1,15 @@
 #include "Model.h"
 #include <iostream>
 #include <unordered_map>
+#include <fstream>
 
 #include "tiny_obj_loader.h"
 #include "stb_image.h"
 
 Model::Model(const std::string& modelPath, const std::string& texturePath) {
-    this->texturePath = texturePath;
+    this->directory = "resources/textures"; // Set the directory for textures
     loadModel(modelPath);
+    loadTexture(texturePath); // Load texture separately
 }
 
 void Model::Draw(const Shader& shader) const {
@@ -77,19 +79,44 @@ void Model::loadModel(const std::string& path) {
             indices.push_back(uniqueVertices[vertex]);
         }
 
-        Texture texture;
-        texture.id = TextureFromFile(texturePath.c_str(), directory);
-        texture.type = "texture_diffuse";
-        texture.path = texturePath;
-        textures.push_back(texture);
-
         Mesh mesh(vertices, indices, textures);
         meshes.push_back(mesh);
     }
 }
 
+void Model::loadTexture(const std::string& path) {
+    std::string fullPath = directory + '/' + path;
+    std::cout << "Loading texture: " << fullPath << std::endl;
+
+    Texture texture;
+    texture.id = TextureFromFile(fullPath.c_str(), directory);
+    texture.type = "texture_diffuse";
+    texture.path = path;
+    textures_loaded.push_back(texture);
+
+    // Apply the texture to all meshes
+    for (auto& mesh : meshes) {
+        mesh.textures.push_back(texture);
+    }
+}
+
 unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma) {
-    std::string filename = directory + '/' + std::string(path);
+    std::string filename = std::string(path);
+
+    std::cout << "Loading texture: " << filename << std::endl;
+
+    // Print the absolute path
+    char absPath[1024];
+    _fullpath(absPath, filename.c_str(), sizeof(absPath));
+    std::cout << "Absolute path: " << absPath << std::endl;
+
+    // Check if file exists
+    std::ifstream file(absPath);
+    if (!file.good()) {
+        std::cerr << "File does not exist: " << absPath << std::endl;
+        return 0;
+    }
+    file.close();
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -117,7 +144,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
         stbi_image_free(data);
     }
     else {
-        std::cerr << "Texture failed to load at path: " << path << std::endl;
+        std::cerr << "Texture failed to load at path: " << filename << std::endl;
         stbi_image_free(data);
     }
 

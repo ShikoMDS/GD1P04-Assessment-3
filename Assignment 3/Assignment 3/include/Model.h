@@ -23,6 +23,7 @@ private:
     std::string texturePath;
 
     void loadModel(const std::string& path);
+    void loadTexture(const std::string& path);
     void processNode();
     Mesh processMesh();
 };
