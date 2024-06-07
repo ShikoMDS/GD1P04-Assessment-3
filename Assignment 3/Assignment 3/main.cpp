@@ -30,6 +30,7 @@ InputManager inputManager(GCamera, GLightManager);
 // Scale factors for the models
 constexpr float ModelScaleFactor = 0.01f;  // Adjust this value to scale down the model
 constexpr float PlantScaleFactor = 0.005f; // Smaller scale for garden plants
+constexpr float TreeScaleFactor = 1.0f;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     inputManager.framebufferSizeCallback(window, width, height);
@@ -124,53 +125,46 @@ int main()
     };
     Skybox Skybox(Faces);
 
-    // Initialize lighting
     GLightManager.initialize();
 
     std::cout << "Starting rendering loop..." << std::endl;
 
-    // Rendering loop
     while (!glfwWindowShouldClose(Window))
     {
-        // Per-frame time logic
         float CurrentFrame = static_cast<float>(glfwGetTime());
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
 
-        // Input
         inputManager.processInput(Window, DeltaTime);
 
-        // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         checkGLError("After Clear");
 
-        // Set shader and pass uniforms
         LightingShader.use();
         LightingShader.setMat4("view", GCamera.getViewMatrix());
         LightingShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
         LightingShader.setVec3("viewPos", GCamera.Position);
 
-        // Update spotlight properties based on camera position and direction
         GLightManager.setSpotLightPosition(GCamera.Position);
         GLightManager.setSpotLightDirection(GCamera.Front);
 
-        // Set material properties
         LightingShader.setVec3("material.ambient", material.ambient);
         LightingShader.setVec3("material.diffuse", material.diffuse);
         LightingShader.setVec3("material.specular", material.specular);
         LightingShader.setFloat("material.shininess", material.shininess);
 
-        // Update lighting based on toggles
         GLightManager.updateLighting(LightingShader);
 
-        // Render garden plants as ground
+        GLightManager.setDirectionalLightDirection(glm::vec3(-0.2f, -1.0f, -0.3f));
+        GLightManager.setDirectionalLightColor(glm::vec3(0.4f, 0.4f, 0.4f));
+
         auto ModelMatrix = glm::mat4(1.0f);
 
         for (int X = -5; X <= 5; X++) {
             for (int Z = -5; Z <= 5; Z++) {
                 ModelMatrix = glm::mat4(1.0f);
-                ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z)); // Lowering y-axis
+                ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z));
                 ModelMatrix = glm::scale(ModelMatrix, glm::vec3(PlantScaleFactor));
                 LightingShader.setMat4("model", ModelMatrix);
                 GardenPlant.Draw(LightingShader);
@@ -179,47 +173,30 @@ int main()
 
         checkGLError("After GardenPlant Draw");
 
-        // Render trees around the scene
         glm::vec3 TreePositions[] = {
-            {-5.0f, -1.0f, -5.0f}, {5.0f, -1.0f, -5.0f},
-            {-5.0f, -1.0f, 5.0f}, {5.0f, -1.0f, 5.0f}
+            {-5.0f, -1.0f, -5.0f},
+            {5.0f, -1.0f, -5.0f},
         };
 
         for (glm::vec3 Pos : TreePositions) {
             ModelMatrix = glm::mat4(1.0f);
             ModelMatrix = glm::translate(ModelMatrix, Pos);
-            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
+            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(TreeScaleFactor));
             LightingShader.setMat4("model", ModelMatrix);
             Tree.Draw(LightingShader);
         }
 
-        checkGLError("After Tree Draw");
-
-        // Render statue in the middle
         ModelMatrix = glm::mat4(1.0f);
-        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f)); // Lowering y-axis
+        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 2.0f));
         ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
         LightingShader.setMat4("model", ModelMatrix);
         Statue.Draw(LightingShader);
 
-        checkGLError("After Statue Draw");
-
-        // Render skybox
-        glDepthFunc(GL_LEQUAL);
-        SkyboxShader.use();
-        SkyboxShader.setMat4("view", glm::mat4(glm::mat3(GCamera.getViewMatrix())));
-        SkyboxShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        Skybox.Draw(SkyboxShader);
-        glDepthFunc(GL_LESS);
-
-        checkGLError("After Skybox Draw");
-
-        // Swap buffers and poll IO events
         glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
-    // Clean up
     glfwTerminate();
     return 0;
+
 }

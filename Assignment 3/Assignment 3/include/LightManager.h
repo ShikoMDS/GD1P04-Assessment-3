@@ -37,6 +37,9 @@ public:
     void toggleDirectionalLight();
     void toggleSpotLight();
 
+    void setDirectionalLightDirection(const glm::vec3& direction);
+    void setDirectionalLightColor(const glm::vec3& color);
+
     void setSpotLightPosition(const glm::vec3& position);
     void setSpotLightDirection(const glm::vec3& direction);
     SpotLight getSpotLight() const;
