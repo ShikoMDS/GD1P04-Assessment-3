@@ -1,4 +1,5 @@
 #include "InputManager.h"
+#include <iostream>
 
 InputManager::InputManager(Camera& camera, LightManager& lightManager)
     : camera(camera), lightManager(lightManager), wireframe(false), cursorVisible(false),
@@ -16,7 +17,6 @@ void InputManager::processInput(GLFWwindow* window, float deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    // Debounce toggles
     for (auto& [key, pressed] : keyState) {
         if (glfwGetKey(window, key) == GLFW_PRESS) {
             if (!pressed) {
@@ -60,7 +60,7 @@ void InputManager::toggleCursorVisibility(GLFWwindow* window) {
     cursorVisible = !cursorVisible;
     if (cursorVisible) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        firstMouse = true; // Reset firstMouse when showing cursor
+        firstMouse = true;
     }
     else {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -72,7 +72,7 @@ void InputManager::framebufferSizeCallback(GLFWwindow* window, int width, int he
 }
 
 void InputManager::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    if (cursorVisible) return; // Skip camera movement when cursor is visible
+    if (cursorVisible) return;
 
     if (firstMouse) {
         lastX = xpos;
@@ -81,7 +81,7 @@ void InputManager::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // Reversed since y-coordinates go from bottom to top
+    float yoffset = lastY - ypos;
 
     lastX = xpos;
     lastY = ypos;

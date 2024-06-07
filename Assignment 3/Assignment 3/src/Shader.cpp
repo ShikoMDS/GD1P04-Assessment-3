@@ -114,3 +114,46 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
 {
     glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 }
+
+void Shader::setMaterial(const std::string& name, const Material& material) const
+{
+    setVec3(name + ".ambient", material.ambient);
+    setVec3(name + ".diffuse", material.diffuse);
+    setVec3(name + ".specular", material.specular);
+    setFloat(name + ".shininess", material.shininess);
+}
+
+void Shader::setLight(const std::string& name, const Light& light) const
+{
+    setVec3(name + ".position", light.position);
+    setVec3(name + ".ambient", light.ambient);
+    setVec3(name + ".diffuse", light.diffuse);
+    setVec3(name + ".specular", light.specular);
+}
+
+void Shader::checkCompileErrors(unsigned int shader, std::string type)
+{
+    int success;
+    char infoLog[1024];
+    if (type != "PROGRAM")
+    {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
+}
+
+void Shader::checkLinkErrors(unsigned int program)
+{
+    int success;
+    char infoLog[1024];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(program, 1024, NULL, infoLog);
+        std::cout << "ERROR::PROGRAM_LINKING_ERROR\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+    }
+}

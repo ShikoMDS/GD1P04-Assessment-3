@@ -43,6 +43,15 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     inputManager.scrollCallback(window, xoffset, yoffset);
 }
 
+void checkGLError(const std::string& location)
+{
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        std::cerr << "OpenGL error at " << location << ": " << err << std::endl;
+    }
+}
+
 int main()
 {
     // Initialize and configure GLFW
@@ -86,8 +95,17 @@ int main()
 
     // Build and compile shaders
     Shader LightingShader("resources/shaders/VertexShader.vert", "resources/shaders/FragmentShader.frag");
-    //Shader ReflectionShader("resources/shaders/ReflectionVertexShader.vert", "resources/shaders/ReflectionFragmentShader.frag");
     Shader SkyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
+
+    LightingShader.checkCompileErrors(LightingShader.ID, "PROGRAM");
+    SkyboxShader.checkCompileErrors(SkyboxShader.ID, "PROGRAM");
+
+    // Define material properties
+    Material material;
+    material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
+    material.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+    material.shininess = 32.0f;
 
     // Load models
     Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
@@ -109,6 +127,8 @@ int main()
     // Initialize lighting
     GLightManager.initialize();
 
+    std::cout << "Starting rendering loop..." << std::endl;
+
     // Rendering loop
     while (!glfwWindowShouldClose(Window))
     {
@@ -123,6 +143,7 @@ int main()
         // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        checkGLError("After Clear");
 
         // Set shader and pass uniforms
         LightingShader.use();
@@ -130,12 +151,14 @@ int main()
         LightingShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
         LightingShader.setVec3("viewPos", GCamera.Position);
 
-        // Set lighting uniforms
-        GLightManager.updateLighting(LightingShader);
+        // Set material properties
+        LightingShader.setVec3("material.ambient", material.ambient);
+        LightingShader.setVec3("material.diffuse", material.diffuse);
+        LightingShader.setVec3("material.specular", material.specular);
+        LightingShader.setFloat("material.shininess", material.shininess);
 
-        // Set additional uniforms for lights
-        LightingShader.setVec3("spotLight.position", GCamera.Position);
-        LightingShader.setVec3("spotLight.direction", GCamera.Front);
+        // Update lighting based on toggles
+        GLightManager.updateLighting(LightingShader);
 
         // Render garden plants as ground
         auto ModelMatrix = glm::mat4(1.0f);
@@ -149,6 +172,8 @@ int main()
                 GardenPlant.Draw(LightingShader);
             }
         }
+
+        checkGLError("After GardenPlant Draw");
 
         // Render trees around the scene
         glm::vec3 TreePositions[] = {
@@ -164,6 +189,8 @@ int main()
             Tree.Draw(LightingShader);
         }
 
+        checkGLError("After Tree Draw");
+
         // Render statue in the middle
         ModelMatrix = glm::mat4(1.0f);
         ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f)); // Lowering y-axis
@@ -171,15 +198,7 @@ int main()
         LightingShader.setMat4("model", ModelMatrix);
         Statue.Draw(LightingShader);
 
-        //// Render the reflective model
-        //ReflectionShader.use();
-        //ReflectionShader.setMat4("view", GCamera.getViewMatrix());
-        //ReflectionShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        //ReflectionShader.setVec3("cameraPos", GCamera.Position);
-        //ReflectionShader.setMat4("model", ModelMatrix);
-        //ReflectionShader.setBool("useTexture", true);
-        //ReflectionShader.setInt("skybox", 0); // Bind the skybox texture to unit 0
-        //Statue.Draw(ReflectionShader);
+        checkGLError("After Statue Draw");
 
         // Render skybox
         glDepthFunc(GL_LEQUAL);
@@ -188,6 +207,8 @@ int main()
         SkyboxShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
         Skybox.Draw(SkyboxShader);
         glDepthFunc(GL_LESS);
+
+        checkGLError("After Skybox Draw");
 
         // Swap buffers and poll IO events
         glfwSwapBuffers(Window);
