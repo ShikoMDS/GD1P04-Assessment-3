@@ -1,25 +1,25 @@
 #include "Model.h"
 #include <iostream>
+#include <unordered_map>
+#include <fstream>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include "tiny_obj_loader.h"
+#include "stb_image.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-Model::Model(const std::string& modelPath, const std::string& texturePath)
-{
-    this->texturePath = texturePath;
+Model::Model(const std::string& modelPath, const std::string& texturePath) {
+    this->directory = "resources/textures"; // Set the directory for textures
     loadModel(modelPath);
+    loadTexture(texturePath); // Load texture separately
 }
 
-void Model::Draw(Shader& shader) {
-    for (auto& mesh : meshes)
+void Model::Draw(const Shader& shader) const {
+    for (const auto& mesh : meshes)
         mesh.Draw(shader);
 }
 
 void Model::loadModel(const std::string& path) {
-    stbi_set_flip_vertically_on_load(true); // Flip texture vertically on load
+    stbi_set_flip_vertically_on_load(true);
+
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -45,33 +45,78 @@ void Model::loadModel(const std::string& path) {
         std::vector<unsigned int> indices;
         std::vector<Texture> textures;
 
-        for (size_t v = 0; v < attrib.vertices.size() / 3; v++) {
-            Vertex vertex;
-            vertex.Position = glm::vec3(attrib.vertices[3 * v + 0], attrib.vertices[3 * v + 1], attrib.vertices[3 * v + 2]);
-            vertex.Normal = glm::vec3(attrib.normals[3 * v + 0], attrib.normals[3 * v + 1], attrib.normals[3 * v + 2]);
-            vertex.TexCoords = glm::vec2(attrib.texcoords[2 * v + 0], attrib.texcoords[2 * v + 1]);
-            std::cout << "Texture Coord: (" << vertex.TexCoords.x << ", " << vertex.TexCoords.y << ")" << std::endl;
-            vertices.push_back(vertex);
-        }
+        std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
         for (const auto& index : shape.mesh.indices) {
-            indices.push_back(index.vertex_index);
-        }
+            Vertex vertex = {};
 
-        Texture texture;
-        texture.id = TextureFromFile(texturePath.c_str(), directory);
-        std::cout << "Loaded Texture ID: " << texture.id << std::endl;
-        texture.type = "texture_diffuse";
-        texture.path = texturePath;
-        textures.push_back(texture);
+            vertex.Position = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            if (index.normal_index >= 0) {
+                vertex.Normal = {
+                    attrib.normals[3 * index.normal_index + 0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2]
+                };
+            }
+
+            if (index.texcoord_index >= 0) {
+                vertex.TexCoords = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+            }
+
+            if (uniqueVertices.count(vertex) == 0) {
+                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(vertex);
+            }
+
+            indices.push_back(uniqueVertices[vertex]);
+        }
 
         Mesh mesh(vertices, indices, textures);
         meshes.push_back(mesh);
     }
 }
 
-unsigned int Model::TextureFromFile(const char* path, const std::string& directory, bool gamma) {
+void Model::loadTexture(const std::string& path) {
+    std::string fullPath = directory + '/' + path;
+    std::cout << "Loading texture: " << fullPath << std::endl;
+
+    Texture texture;
+    texture.id = TextureFromFile(fullPath.c_str(), directory);
+    texture.type = "texture_diffuse";
+    texture.path = path;
+    textures_loaded.push_back(texture);
+
+    // Apply the texture to all meshes
+    for (auto& mesh : meshes) {
+        mesh.textures.push_back(texture);
+    }
+}
+
+unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma) {
     std::string filename = std::string(path);
+
+    std::cout << "Loading texture: " << filename << std::endl;
+
+    // Print the absolute path
+    char absPath[1024];
+    _fullpath(absPath, filename.c_str(), sizeof(absPath));
+    std::cout << "Absolute path: " << absPath << std::endl;
+
+    // Check if file exists
+    std::ifstream file(absPath);
+    if (!file.good()) {
+        std::cerr << "File does not exist: " << absPath << std::endl;
+        return 0;
+    }
+    file.close();
 
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -99,7 +144,7 @@ unsigned int Model::TextureFromFile(const char* path, const std::string& directo
         stbi_image_free(data);
     }
     else {
-        std::cerr << "Texture failed to load at path: " << path << std::endl;
+        std::cerr << "Texture failed to load at path: " << filename << std::endl;
         stbi_image_free(data);
     }
 

@@ -3,8 +3,6 @@
 #include <iostream>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <gtx/string_cast.hpp>
 #include "Shader.h"
 #include "Camera.h"
 #include "LightManager.h"
@@ -17,7 +15,7 @@ constexpr unsigned int ScrWidth = 800;
 constexpr unsigned int ScrHeight = 600;
 
 // Camera
-Camera GCamera(glm::vec3(0.0f, 0.0f, 5.0f));
+Camera GCamera(glm::vec3(0.0f, 0.0f, 5.0f)); // Set initial position a bit further back to allow zooming in and out
 
 // Timing
 float DeltaTime = 0.0f;
@@ -30,9 +28,9 @@ LightManager GLightManager;
 InputManager inputManager(GCamera, GLightManager);
 
 // Scale factors for the models
-constexpr float ModelScaleFactor = 0.01f;
-constexpr float PlantScaleFactor = 0.005f;
-constexpr float LightScaleFactor = 1.0f;
+constexpr float ModelScaleFactor = 0.01f;  // Adjust this value to scale down the model
+constexpr float PlantScaleFactor = 0.005f; // Smaller scale for garden plants
+constexpr float SphereScaleFactor = 0.5f;  // Adjusted scale for the spheres
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     inputManager.framebufferSizeCallback(window, width, height);
@@ -46,27 +44,32 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     inputManager.scrollCallback(window, xoffset, yoffset);
 }
 
-// Function to convert degrees to radians
-constexpr float DegreesToRadians(float degrees) {
-    return degrees * glm::pi<float>() / 180.0f;
+void checkGLError(const std::string& location)
+{
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        std::cerr << "OpenGL error at " << location << ": " << err << std::endl;
+    }
 }
 
 int main()
 {
-    std::cout << "Initializing GLFW..." << std::endl;
     // Initialize and configure GLFW
-    if (!glfwInit()) {
+    if (!glfwInit())
+    {
         std::cerr << "Failed to initialize GLFW" << '\n';
         return -1;
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 4); // Enable MSAA
 
     // Create a windowed mode window and its OpenGL context
     GLFWwindow* Window = glfwCreateWindow(ScrWidth, ScrHeight, "OpenGL Demo", nullptr, nullptr);
-    if (!Window) {
+    if (!Window)
+    {
         std::cerr << "Failed to create GLFW window" << '\n';
         glfwTerminate();
         return -1;
@@ -79,69 +82,58 @@ int main()
     // Capture the mouse
     glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    std::cout << "Initializing GLEW..." << std::endl;
     // Initialize GLEW
-    if (glewInit() != GLEW_OK) {
+    if (glewInit() != GLEW_OK)
+    {
         std::cerr << "Failed to initialize GLEW" << '\n';
         return -1;
     }
 
-    std::cout << "Configuring global OpenGL state..." << std::endl;
     // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_CULL_FACE); // Enable back-face culling
+    glEnable(GL_MULTISAMPLE); // Enable MSAA
 
-    std::cout << "Building and compiling shaders..." << std::endl;
-    // Skybox
+    // Build and compile shaders
+    Shader LightingShader("resources/shaders/VertexShader.vert", "resources/shaders/FragmentShader.frag");
     Shader SkyboxShader("resources/shaders/SkyboxVertexShader.vert", "resources/shaders/SkyboxFragmentShader.frag");
-    // Point lights
-    Shader SimpleShader("resources/shaders/SimpleVertexShader.vert", "resources/shaders/SimpleFragmentShader.frag");
-    // Default shader for other objects
-    Shader DefaultShader("resources/shaders/DefaultVertexShader.vert", "resources/shaders/DefaultFragmentShader.frag");
 
-    std::cout << "Loading models..." << std::endl;
+    LightingShader.checkCompileErrors(LightingShader.ID, "PROGRAM");
+    SkyboxShader.checkCompileErrors(SkyboxShader.ID, "PROGRAM");
+
+    // Define material properties
+    Material material;
+    material.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
+    material.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+    material.shininess = 32.0f;
+
     // Load models
-    Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    Model Tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "resources/textures/PolygonAncientWorlds_Texture_01_A.png");
-    // Point Lights
-    Model Light("resources/models/Sphere/Sphere_HighPoly.obj", "resources/textures/PolygonSciFiSpace_Texture_01_A.png");
+    Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model Tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model Sphere("resources/models/Sphere/Sphere_HighPoly.obj", ""); // Sphere model without texture
 
-    std::cout << "Loading skybox..." << std::endl;
     // Load skybox
     std::vector<std::string> Faces
     {
-        "resources/skybox/Corona/Right.png",
-        "resources/skybox/Corona/Left.png",
-        "resources/skybox/Corona/Top.png",
-        "resources/skybox/Corona/Bottom.png",
-        // WHY ARE THESE NEEDING TO BE SWAPPED?????
-        "resources/skybox/Corona/Back.png",
-        "resources/skybox/Corona/Front.png"
+        "resources/skybox/Corona/Right.png",   // Right
+        "resources/skybox/Corona/Left.png",    // Left
+        "resources/skybox/Corona/Top.png",     // Top
+        "resources/skybox/Corona/Bottom.png",  // Bottom
+        "resources/skybox/Corona/Back.png",    // Back
+        "resources/skybox/Corona/Front.png"    // Front
     };
-    Skybox skybox(Faces);
+    Skybox Skybox(Faces);
 
-    std::cout << "Initializing lighting..." << std::endl;
     // Initialize lighting
     GLightManager.initialize();
 
-    // Set the directional light direction to a fixed position (example: from the front above)
-    GLightManager.setDirectionalLightDirection(glm::vec3(0.0f, -1.0f, -1.0f));
+    std::cout << "Starting rendering loop..." << std::endl;
 
-    // Define point light positions and colors using the mines
-    glm::vec3 pointLightPositions[] = {
-        glm::vec3(3.0f, 2.0f, 0.0f),
-        glm::vec3(-3.0f, 2.0f, 0.0f)
-    };
-    glm::vec3 pointLightColors[] = {
-        glm::vec3(1.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f)
-    };
-
-    std::cout << "Entering render loop..." << std::endl;
     // Rendering loop
-    while (!glfwWindowShouldClose(Window)) {
+    while (!glfwWindowShouldClose(Window))
+    {
         // Per-frame time logic
         float CurrentFrame = static_cast<float>(glfwGetTime());
         DeltaTime = CurrentFrame - LastFrame;
@@ -153,33 +145,42 @@ int main()
         // Render
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        checkGLError("After Clear");
 
         // Set shader and pass uniforms
-        DefaultShader.use();
-        DefaultShader.setMat4("view", GCamera.getViewMatrix());
-        DefaultShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        DefaultShader.setVec3("viewPos", GCamera.Position);
+        LightingShader.use();
+        LightingShader.setMat4("view", GCamera.getViewMatrix());
+        LightingShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+        LightingShader.setVec3("viewPos", GCamera.Position);
 
-        // Set spotlight position and direction
-        GLightManager.setSpotLightPosition(GCamera.Position, GCamera.Front);
+        // Update spotlight properties based on camera position and direction
+        GLightManager.setSpotLightPosition(GCamera.Position);
+        GLightManager.setSpotLightDirection(GCamera.Front);
 
-        // Set point light uniforms using mines
-        GLightManager.updateLighting(DefaultShader);
+        // Set material properties
+        LightingShader.setVec3("material.specular", material.specular);
+        LightingShader.setFloat("material.shininess", material.shininess);
+
+        // Update lighting based on toggles
+        GLightManager.updateLighting(LightingShader);
 
         // Render garden plants as ground
+        LightingShader.setBool("useTexture", true);
         auto ModelMatrix = glm::mat4(1.0f);
 
         for (int X = -5; X <= 5; X++) {
             for (int Z = -5; Z <= 5; Z++) {
                 ModelMatrix = glm::mat4(1.0f);
-                ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z));
+                ModelMatrix = glm::translate(ModelMatrix, glm::vec3(X, -1.0f, Z)); // Lowering y-axis
                 ModelMatrix = glm::scale(ModelMatrix, glm::vec3(PlantScaleFactor));
-                DefaultShader.setMat4("model", ModelMatrix);
-                std::cout << "Plant ModelMatrix: " << glm::to_string(ModelMatrix) << std::endl;
-                GardenPlant.Draw(DefaultShader);
+                LightingShader.setMat4("model", ModelMatrix);
+                GardenPlant.Draw(LightingShader);
             }
         }
 
+        checkGLError("After GardenPlant Draw");
+
+        // Render trees around the scene
         glm::vec3 TreePositions[] = {
             {-5.0f, -1.0f, -5.0f}, {5.0f, -1.0f, -5.0f},
             {-5.0f, -1.0f, 5.0f}, {5.0f, -1.0f, 5.0f}
@@ -189,46 +190,53 @@ int main()
             ModelMatrix = glm::mat4(1.0f);
             ModelMatrix = glm::translate(ModelMatrix, Pos);
             ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
-            DefaultShader.setMat4("model", ModelMatrix);
-            std::cout << "Tree ModelMatrix: " << glm::to_string(ModelMatrix) << std::endl;
-            Tree.Draw(DefaultShader);
+            LightingShader.setMat4("model", ModelMatrix);
+            Tree.Draw(LightingShader);
         }
 
+        checkGLError("After Tree Draw");
+
+        // Render statue in the middle
         ModelMatrix = glm::mat4(1.0f);
-        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
+        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f)); // Lowering y-axis
         ModelMatrix = glm::scale(ModelMatrix, glm::vec3(ModelScaleFactor));
-        DefaultShader.setMat4("model", ModelMatrix);
-        std::cout << "Statue ModelMatrix: " << glm::to_string(ModelMatrix) << std::endl;
-        Statue.Draw(DefaultShader);
+        LightingShader.setMat4("model", ModelMatrix);
+        Statue.Draw(LightingShader);
 
-        // Render mines as point light sources
-        SimpleShader.use();
-        SimpleShader.setMat4("view", GCamera.getViewMatrix());
-        SimpleShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
+        checkGLError("After Statue Draw");
 
-        for (int i = 0; i < 2; ++i) {
+        // Render point light spheres
+        glm::vec3 SpherePositions[] = {
+            glm::vec3(-2.0f, 0.5f, 0.0f), // Left of the statue
+            glm::vec3(2.0f, 0.5f, 0.0f)   // Right of the statue
+        };
+
+        LightingShader.setBool("useTexture", false);
+
+        for (int i = 0; i < 2; i++) {
             ModelMatrix = glm::mat4(1.0f);
-            ModelMatrix = glm::translate(ModelMatrix, pointLightPositions[i]);
-            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(LightScaleFactor));
-            SimpleShader.setMat4("model", ModelMatrix);
+            ModelMatrix = glm::translate(ModelMatrix, SpherePositions[i]);
+            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(SphereScaleFactor));
+            LightingShader.setMat4("model", ModelMatrix);
 
-            // Check if point lights are on and set color accordingly
-            if (GLightManager.arePointLightsOn()) {
-                SimpleShader.setVec3("color", pointLightColors[i]);
-            }
-            else {
-                SimpleShader.setVec3("color", glm::vec3(0.0f, 0.0f, 0.0f)); // Lights off
-            }
-            Light.Draw(SimpleShader);
+            // Update sphere colors based on point light state
+            glm::vec3 sphereColor = GLightManager.isPointLightsOn() ? GLightManager.getPointLight(i).color : glm::vec3(0.0f);
+            LightingShader.setVec3("solidColor", sphereColor);
+
+            Sphere.Draw(LightingShader);
         }
+
+        checkGLError("After Sphere Draw");
 
         // Render skybox
         glDepthFunc(GL_LEQUAL);
         SkyboxShader.use();
         SkyboxShader.setMat4("view", glm::mat4(glm::mat3(GCamera.getViewMatrix())));
         SkyboxShader.setMat4("projection", GCamera.getProjectionMatrix(ScrWidth, ScrHeight));
-        skybox.Draw(SkyboxShader);
+        Skybox.Draw(SkyboxShader);
         glDepthFunc(GL_LESS);
+
+        checkGLError("After Skybox Draw");
 
         // Swap buffers and poll IO events
         glfwSwapBuffers(Window);

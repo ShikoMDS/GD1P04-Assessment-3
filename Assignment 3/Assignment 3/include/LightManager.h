@@ -1,13 +1,12 @@
-#ifndef LIGHTMANAGER_H
-#define LIGHTMANAGER_H
+#pragma once
 
-#include <glm.hpp>
 #include "Shader.h"
+#include <glm.hpp>
+#include <string>
 
 struct PointLight {
     glm::vec3 position;
     glm::vec3 color;
-
     float constant;
     float linear;
     float quadratic;
@@ -16,32 +15,39 @@ struct PointLight {
 struct DirectionalLight {
     glm::vec3 direction;
     glm::vec3 color;
+    float ambientStrength; // Add this line
 };
 
+
 struct SpotLight {
-    glm::vec3 position;
-    glm::vec3 direction;
-    glm::vec3 color;
+	glm::vec3 position;
+	glm::vec3 direction;
+	glm::vec3 color;
     float cutOff;
     float outerCutOff;
-
     float constant;
     float linear;
     float quadratic;
 };
 
-class LightManager {
+class LightManager
+{
 public:
     LightManager();
 
     void initialize();
     void updateLighting(const Shader& shader) const;
+
     void togglePointLights();
     void toggleDirectionalLight();
     void toggleSpotLight();
-    void setDirectionalLightDirection(const glm::vec3& direction);
-    void setSpotLightPosition(const glm::vec3& position, const glm::vec3& direction);
-    bool arePointLightsOn() const { return pointLightsOn; }
+
+    void setSpotLightPosition(const glm::vec3& position);
+    void setSpotLightDirection(const glm::vec3& direction);
+    SpotLight getSpotLight() const;
+
+    bool isPointLightsOn() const { return pointLightsOn; }
+    const PointLight& getPointLight(int index) const { return pointLights[index]; }
 
 private:
     PointLight pointLights[2];
@@ -50,7 +56,5 @@ private:
 
     bool pointLightsOn;
     bool directionalLightOn;
-    bool spotlightOn;
+    bool spotLightOn;
 };
-
-#endif // LIGHTMANAGER_H
