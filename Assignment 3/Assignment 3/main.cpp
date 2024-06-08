@@ -30,6 +30,7 @@ InputManager inputManager(GCamera, GLightManager);
 // Scale factors for the models
 constexpr float ModelScaleFactor = 0.01f;  // Adjust this value to scale down the model
 constexpr float PlantScaleFactor = 0.005f; // Smaller scale for garden plants
+constexpr float SphereScaleFactor = 0.5f;  // Adjusted scale for the spheres
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     inputManager.framebufferSizeCallback(window, width, height);
@@ -111,6 +112,7 @@ int main()
     Model GardenPlant("resources/models/AncientEmpire/SM_Env_Garden_Plants_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
     Model Tree("resources/models/AncientEmpire/SM_Env_Tree_Palm_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
     Model Statue("resources/models/AncientEmpire/SM_Prop_Statue_01.obj", "PolygonAncientWorlds_Texture_01_A.png");
+    Model Sphere("resources/models/Sphere/Sphere_HighPoly.obj", ""); // Sphere model without texture
 
     // Load skybox
     std::vector<std::string> Faces
@@ -156,8 +158,6 @@ int main()
         GLightManager.setSpotLightDirection(GCamera.Front);
 
         // Set material properties
-        LightingShader.setVec3("material.ambient", material.ambient);
-        LightingShader.setVec3("material.diffuse", material.diffuse);
         LightingShader.setVec3("material.specular", material.specular);
         LightingShader.setFloat("material.shininess", material.shininess);
 
@@ -165,6 +165,7 @@ int main()
         GLightManager.updateLighting(LightingShader);
 
         // Render garden plants as ground
+        LightingShader.setBool("useTexture", true);
         auto ModelMatrix = glm::mat4(1.0f);
 
         for (int X = -5; X <= 5; X++) {
@@ -203,6 +204,29 @@ int main()
         Statue.Draw(LightingShader);
 
         checkGLError("After Statue Draw");
+
+        // Render point light spheres
+        glm::vec3 SpherePositions[] = {
+            glm::vec3(-2.0f, 0.5f, 0.0f), // Left of the statue
+            glm::vec3(2.0f, 0.5f, 0.0f)   // Right of the statue
+        };
+
+        LightingShader.setBool("useTexture", false);
+
+        for (int i = 0; i < 2; i++) {
+            ModelMatrix = glm::mat4(1.0f);
+            ModelMatrix = glm::translate(ModelMatrix, SpherePositions[i]);
+            ModelMatrix = glm::scale(ModelMatrix, glm::vec3(SphereScaleFactor));
+            LightingShader.setMat4("model", ModelMatrix);
+
+            // Update sphere colors based on point light state
+            glm::vec3 sphereColor = GLightManager.isPointLightsOn() ? GLightManager.getPointLight(i).color : glm::vec3(0.0f);
+            LightingShader.setVec3("solidColor", sphereColor);
+
+            Sphere.Draw(LightingShader);
+        }
+
+        checkGLError("After Sphere Draw");
 
         // Render skybox
         glDepthFunc(GL_LEQUAL);

@@ -46,6 +46,9 @@ public:
     void setSpotLightDirection(const glm::vec3& direction);
     SpotLight getSpotLight() const;
 
+    bool isPointLightsOn() const { return pointLightsOn; }
+    const PointLight& getPointLight(int index) const { return pointLights[index]; }
+
 private:
     PointLight pointLights[2];
     DirectionalLight directionalLight;

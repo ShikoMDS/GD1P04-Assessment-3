@@ -1,13 +1,18 @@
 #include "LightManager.h"
 
-LightManager::LightManager() : pointLightsOn(true), directionalLightOn(true), spotLightOn(true) {}
+LightManager::LightManager() {}
 
 void LightManager::initialize()
 {
-    pointLights[0] = { glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f, 0.09f, 0.032f };
-    pointLights[1] = { glm::vec3(1.2f, -1.0f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 0.09f, 0.032f };
+    pointLights[0] = { glm::vec3(-2.0f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f, 0.09f, 0.032f }; // Red light
+    pointLights[1] = { glm::vec3(2.0f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 0.09f, 0.032f };  // Blue light
     directionalLight = { glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.4f, 0.4f, 0.4f), 0.1f };
-    spotLight = { glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::cos(glm::radians(17.5f)), glm::cos(glm::radians(20.0f)), 1.0f, 0.09f, 0.032f }; // Ensure the color is non-zero
+    spotLight = { glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::cos(glm::radians(20.0f)), glm::cos(glm::radians(25.0f)), 1.0f, 0.09f, 0.032f };
+
+    // Ensure spotlight is on by default
+    spotLightOn = true;
+    pointLightsOn = true; // Ensure point lights are on by default
+    directionalLightOn = true;
 }
 
 void LightManager::updateLighting(const Shader& shader) const
@@ -37,15 +42,14 @@ void LightManager::updateLighting(const Shader& shader) const
 void LightManager::togglePointLights()
 {
     pointLightsOn = !pointLightsOn;
-    if (pointLightsOn)
-    {
-        pointLights[0].color = glm::vec3(1.0f, 0.5f, 0.31f);
-        pointLights[1].color = glm::vec3(0.5f, 0.5f, 1.0f);
-    }
-    else
-    {
+
+    if (!pointLightsOn) {
         pointLights[0].color = glm::vec3(0.0f);
         pointLights[1].color = glm::vec3(0.0f);
+    }
+    else {
+        pointLights[0].color = glm::vec3(1.0f, 0.0f, 0.0f); // Red light
+        pointLights[1].color = glm::vec3(0.0f, 0.0f, 1.0f); // Blue light
     }
 }
 
