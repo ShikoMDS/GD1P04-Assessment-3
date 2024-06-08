@@ -15,14 +15,19 @@ struct PointLight {
 struct DirectionalLight {
     glm::vec3 direction;
     glm::vec3 color;
+    float ambientStrength; // Add this line
 };
 
+
 struct SpotLight {
-    glm::vec3 position;
-    glm::vec3 color;
-    glm::vec3 direction;
+	glm::vec3 position;
+	glm::vec3 direction;
+	glm::vec3 color;
     float cutOff;
     float outerCutOff;
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 class LightManager
@@ -43,6 +48,9 @@ public:
     void setSpotLightPosition(const glm::vec3& position);
     void setSpotLightDirection(const glm::vec3& direction);
     SpotLight getSpotLight() const;
+
+    bool isPointLightsOn() const { return pointLightsOn; }
+    const PointLight& getPointLight(int index) const { return pointLights[index]; }
 
 private:
     PointLight pointLights[2];

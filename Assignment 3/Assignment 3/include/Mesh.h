@@ -1,10 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <string>
 #include <glew.h>
 #include <glm.hpp>
-#include <string>
-#include <vector>
-#include "shader.h"
+#include "Shader.h"
 
 struct Vertex {
     glm::vec3 Position;
@@ -51,8 +51,7 @@ public:
     std::vector<Texture> textures;
 
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
-
-    void Draw(const Shader& shader) const;
+    void Draw(const Shader& shader);
 
 private:
     unsigned int VAO, VBO, EBO;
