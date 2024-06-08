@@ -41,8 +41,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\DefaultVertexShader.vert" />
-    <None Include="resources\shaders\DefaultFragmentShader.frag" />
+    <None Include="resources\shaders\VertexShader.vert" />
+    <None Include="resources\shaders\FragmentShader.frag" />
     <None Include="resources\shaders\SkyboxFragmentShader.frag" />
     <None Include="resources\shaders\SkyboxVertexShader.vert" />
     <None Include="resources\shaders\ReflectionVertexShader.vert" />
