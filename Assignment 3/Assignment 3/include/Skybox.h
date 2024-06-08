@@ -1,20 +1,20 @@
 #pragma once
 
+#include <vector>
+#include <string>
 #include <glew.h>
 #include <glm.hpp>
-#include <vector>
-#include "shader.h"
+#include "Shader.h"
 
-class Skybox
-{
+class Skybox {
 public:
     Skybox(const std::vector<std::string>& faces);
-    void Draw(const Shader& shader) const;
+    void Draw(const Shader& shader);
 
 private:
-    unsigned int VAO, VBO;
-    unsigned int cubemapTexture;
-
-    void setupSkybox();
     unsigned int loadCubemap(const std::vector<std::string>& faces);
+    void setupSkybox();
+
+    unsigned int skyboxVAO, skyboxVBO;
+    unsigned int cubemapTexture;
 };
