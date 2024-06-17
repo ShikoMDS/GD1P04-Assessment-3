@@ -1,3 +1,17 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : Camera.h
+Description : Definitions for camera in OpenGL
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #pragma once
 
 #include <glew.h>
@@ -5,49 +19,47 @@
 #include <gtc/matrix_transform.hpp>
 #include <vector>
 
-enum Camera_Movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN
+enum CameraMovement
+{
+	Forward,
+	Backward,
+	Left,
+	Right,
+	Up,
+	Down
 };
 
-const float YAW = -90.0f;
-const float PITCH = 0.0f;
-const float SPEED = 2.5f;
-const float SENSITIVITY = 0.05f;  // Reduced sensitivity
-const float ZOOM = 45.0f;
+constexpr float Yaw = -90.0f;
+constexpr float Pitch = 0.0f;
+constexpr float Speed = 2.5f;
+constexpr float Sensitivity = 0.05f;
+constexpr float Zoom = 45.0f;
 
 class Camera
 {
 public:
-    glm::vec3 Position;
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    float Yaw;
-    float Pitch;
-    float MovementSpeed;
-    float MouseSensitivity;
-    float Zoom;
+	Camera(float PosX, float PosY, float PosZ, float UpX, float UpY, float UpZ, float Yaw, float Pitch);
+	explicit Camera(glm::vec3 Pos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f),
+	                float Yaw = Yaw, float Pitch = Pitch);
 
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
+	[[nodiscard]] glm::mat4 getViewMatrix() const;
+	[[nodiscard]] glm::mat4 getProjectionMatrix(float Width, float Height) const;
 
-    Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
+	void processKeyboard(CameraMovement Direction, float DeltaTime);
+	void processMouseMovement(float OffsetX, float OffsetY, GLboolean ConstrainPitch = true);
+	void processMouseScroll(float OffsetY);
 
-    glm::mat4 getViewMatrix() const;
-
-    glm::mat4 getProjectionMatrix(float width, float height) const;
-
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime);
-
-    void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
-
-    void ProcessMouseScroll(float yoffset);
+	glm::vec3 VPosition;
+	glm::vec3 VFront;
+	glm::vec3 VUp;
+	glm::vec3 VRight;
+	glm::vec3 VWorldUp;
+	float FYaw;
+	float FPitch;
+	float FMovementSpeed;
+	float FMouseSensitivity;
+	float FZoom;
 
 private:
-    void updateCameraVectors();
+	void updateCameraVectors();
 };

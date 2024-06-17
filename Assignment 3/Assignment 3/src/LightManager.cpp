@@ -1,81 +1,110 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : LightManager.cpp
+Description : Implementations for LightManager class
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #include "LightManager.h"
 
-LightManager::LightManager() {}
+LightManager::LightManager() = default;
 
 void LightManager::initialize()
 {
-    pointLights[0] = { glm::vec3(-2.0f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f, 0.09f, 0.032f }; // Red light
-    pointLights[1] = { glm::vec3(2.0f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 0.09f, 0.032f };  // Blue light
-    directionalLight = { glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.4f, 0.4f, 0.4f), 0.1f };
-    spotLight = { glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::cos(glm::radians(20.0f)), glm::cos(glm::radians(25.0f)), 1.0f, 0.09f, 0.032f };
+	MPointLights[0] = {glm::vec3(-2.0f, 0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f, 0.09f, 0.032f}; // Red light
+	MPointLights[1] = {glm::vec3(2.0f, 0.5f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 0.09f, 0.032f}; // Blue light
+	MDirectionalLight = {glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec3(0.4f, 0.4f, 0.4f), 0.1f};
+	MSpotLight = {
+		glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(1.0f, 1.0f, 1.0f),
+		glm::cos(glm::radians(20.0f)), glm::cos(glm::radians(25.0f)), 1.0f, 0.09f, 0.032f
+	};
 
-    // Ensure spotlight is on by default
-    spotLightOn = true;
-    pointLightsOn = true; // Ensure point lights are on by default
-    directionalLightOn = true;
+	MSpotLightOn = true;
+	MPointLightsOn = true;
+	MDirectionalLightOn = true;
 }
 
-void LightManager::updateLighting(const Shader& shader) const
+void LightManager::updateLighting(const Shader& Shader) const
 {
-    shader.setVec3("directionalLight.direction", directionalLight.direction);
-    shader.setVec3("directionalLight.color", directionalLight.color);
-    shader.setFloat("directionalLight.ambientStrength", directionalLight.ambientStrength);
+	Shader.setVec3("directionalLight.direction", MDirectionalLight.Direction);
+	Shader.setVec3("directionalLight.color", MDirectionalLight.Colour);
+	Shader.setFloat("directionalLight.ambientStrength", MDirectionalLight.AmbientStrength);
 
-    for (int i = 0; i < 2; i++) {
-        shader.setVec3("pointLights[" + std::to_string(i) + "].position", pointLights[i].position);
-        shader.setVec3("pointLights[" + std::to_string(i) + "].color", pointLights[i].color);
-        shader.setFloat("pointLights[" + std::to_string(i) + "].constant", pointLights[i].constant);
-        shader.setFloat("pointLights[" + std::to_string(i) + "].linear", pointLights[i].linear);
-        shader.setFloat("pointLights[" + std::to_string(i) + "].quadratic", pointLights[i].quadratic);
-    }
+	for (int I = 0; I < 2; I++)
+	{
+		Shader.setVec3("pointLights[" + std::to_string(I) + "].position", MPointLights[I].Position);
+		Shader.setVec3("pointLights[" + std::to_string(I) + "].color", MPointLights[I].Colour);
+		Shader.setFloat("pointLights[" + std::to_string(I) + "].constant", MPointLights[I].Constant);
+		Shader.setFloat("pointLights[" + std::to_string(I) + "].linear", MPointLights[I].Linear);
+		Shader.setFloat("pointLights[" + std::to_string(I) + "].quadratic", MPointLights[I].Quadratic);
+	}
 
-    shader.setVec3("spotLight.position", spotLight.position);
-    shader.setVec3("spotLight.direction", spotLight.direction);
-    shader.setVec3("spotLight.color", spotLight.color);
-    shader.setFloat("spotLight.cutOff", spotLight.cutOff);
-    shader.setFloat("spotLight.outerCutOff", spotLight.outerCutOff);
-    shader.setFloat("spotLight.constant", spotLight.constant);
-    shader.setFloat("spotLight.linear", spotLight.linear);
-    shader.setFloat("spotLight.quadratic", spotLight.quadratic);
+	Shader.setVec3("spotLight.position", MSpotLight.Position);
+	Shader.setVec3("spotLight.direction", MSpotLight.Direction);
+	Shader.setVec3("spotLight.color", MSpotLight.Colour);
+	Shader.setFloat("spotLight.cutOff", MSpotLight.CutOff);
+	Shader.setFloat("spotLight.outerCutOff", MSpotLight.OuterCutOff);
+	Shader.setFloat("spotLight.constant", MSpotLight.Constant);
+	Shader.setFloat("spotLight.linear", MSpotLight.Linear);
+	Shader.setFloat("spotLight.quadratic", MSpotLight.Quadratic);
 }
 
 void LightManager::togglePointLights()
 {
-    pointLightsOn = !pointLightsOn;
+	MPointLightsOn = !MPointLightsOn;
 
-    if (!pointLightsOn) {
-        pointLights[0].color = glm::vec3(0.0f);
-        pointLights[1].color = glm::vec3(0.0f);
-    }
-    else {
-        pointLights[0].color = glm::vec3(1.0f, 0.0f, 0.0f); // Red light
-        pointLights[1].color = glm::vec3(0.0f, 0.0f, 1.0f); // Blue light
-    }
+	if (!MPointLightsOn)
+	{
+		MPointLights[0].Colour = glm::vec3(0.0f);
+		MPointLights[1].Colour = glm::vec3(0.0f);
+	}
+	else
+	{
+		MPointLights[0].Colour = glm::vec3(1.0f, 0.0f, 0.0f); // Red light
+		MPointLights[1].Colour = glm::vec3(0.0f, 0.0f, 1.0f); // Blue light
+	}
 }
 
 void LightManager::toggleDirectionalLight()
 {
-    directionalLightOn = !directionalLightOn;
-    directionalLight.color = directionalLightOn ? glm::vec3(0.4f, 0.4f, 0.4f) : glm::vec3(0.0f);
+	MDirectionalLightOn = !MDirectionalLightOn;
+	MDirectionalLight.Colour = MDirectionalLightOn ? glm::vec3(0.4f, 0.4f, 0.4f) : glm::vec3(0.0f);
 }
 
 void LightManager::toggleSpotLight()
 {
-    spotLightOn = !spotLightOn;
-    spotLight.color = spotLightOn ? glm::vec3(1.0f, 1.0f, 1.0f) : glm::vec3(0.0f);
+	MSpotLightOn = !MSpotLightOn;
+	MSpotLight.Colour = MSpotLightOn ? glm::vec3(1.0f, 1.0f, 1.0f) : glm::vec3(0.0f);
 }
 
-void LightManager::setSpotLightPosition(const glm::vec3& position)
+void LightManager::setSpotLightPosition(const glm::vec3& Position)
 {
-    spotLight.position = position;
+	MSpotLight.Position = Position;
 }
 
-void LightManager::setSpotLightDirection(const glm::vec3& direction)
+void LightManager::setSpotLightDirection(const glm::vec3& Direction)
 {
-    spotLight.direction = direction;
+	MSpotLight.Direction = Direction;
 }
 
 SpotLight LightManager::getSpotLight() const
 {
-    return spotLight;
+	return MSpotLight;
+}
+
+bool LightManager::isPointLightsOn() const
+{
+	return MPointLightsOn;
+}
+
+const PointLight& LightManager::getPointLight(const int Index) const
+{
+	return MPointLights[Index];
 }

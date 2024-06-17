@@ -1,38 +1,56 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : Shader.h
+Description : Definitions for shader compilation for OpenGL
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #pragma once
 
 #include <glew.h>
 #include <glm.hpp>
 #include <string>
 
-struct Material {
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-    float shininess;
+struct Material
+{
+	glm::vec3 Ambient;
+	glm::vec3 Diffuse;
+	glm::vec3 Specular;
+	float Shininess;
 };
 
-struct Light {
-    glm::vec3 position;
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
+struct Light
+{
+	glm::vec3 Position;
+	glm::vec3 Ambient;
+	glm::vec3 Diffuse;
+	glm::vec3 Specular;
 };
 
 class Shader
 {
 public:
-    unsigned int ID;
-    Shader(const char* vertexPath, const char* fragmentPath);
-    void use() const;
-    void setBool(const std::string& name, bool value) const;
-    void setInt(const std::string& name, int value) const;
-    void setFloat(const std::string& name, float value) const;
-    void setVec3(const std::string& name, const glm::vec3& value) const;
-    void setVec3(const std::string& name, float x, float y, float z) const;
-    void setMat4(const std::string& name, const glm::mat4& mat) const;
-    void setMaterial(const std::string& name, const Material& material) const;
-    void setLight(const std::string& name, const Light& light) const;
+	Shader(const char* VertexPath, const char* FragmentPath);
 
-    void checkCompileErrors(unsigned int shader, std::string type);
-    void checkLinkErrors(unsigned int program);
+	void use() const;
+	void setBool(const std::string& Name, bool Value) const;
+	void setInt(const std::string& Name, int Value) const;
+	void setFloat(const std::string& Name, float Value) const;
+	void setVec3(const std::string& Name, const glm::vec3& Value) const;
+	void setVec3(const std::string& Name, float X, float Y, float Z) const;
+	void setMat4(const std::string& Name, const glm::mat4& Mat) const;
+	void setMaterial(const std::string& Name, const Material& Material) const;
+	void setLight(const std::string& Name, const Light& Light) const;
+
+	static void checkCompileErrors(unsigned int Shader, const std::string& Type);
+	static void checkLinkErrors(unsigned int Program);
+
+	unsigned int Id;
 };

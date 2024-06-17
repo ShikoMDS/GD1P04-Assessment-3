@@ -1,87 +1,101 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : Camera.cpp
+Description : Implementations for Camera class
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #include "Camera.h"
 
-Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
-    : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+Camera::Camera(float PosX, float PosY, float PosZ, float UpX, float UpY, float UpZ, float Yaw, float Pitch)
+	: VFront(glm::vec3(0.0f, 0.0f, -1.0f)), FMovementSpeed(Speed), FMouseSensitivity(Sensitivity), FZoom(Zoom)
 {
-    Position = position;
-    WorldUp = up;
-    Yaw = yaw;
-    Pitch = pitch;
-    updateCameraVectors();
+	VPosition = glm::vec3(PosX, PosY, PosZ);
+	VWorldUp = glm::vec3(UpX, UpY, UpZ);
+	FYaw = Yaw;
+	FPitch = Pitch;
+	updateCameraVectors();
 }
 
-Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch)
-    : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+Camera::Camera(glm::vec3 Pos, glm::vec3 Up, float Yaw, float Pitch)
+	: VFront(glm::vec3(0.0f, 0.0f, 0.0f)), FMovementSpeed(Speed), FMouseSensitivity(Sensitivity), FZoom(Zoom)
 {
-    Position = glm::vec3(posX, posY, posZ);
-    WorldUp = glm::vec3(upX, upY, upZ);
-    Yaw = yaw;
-    Pitch = pitch;
-    updateCameraVectors();
+	VPosition = Pos;
+	VWorldUp = Up;
+	FYaw = Yaw;
+	FPitch = Pitch;
+	updateCameraVectors();
 }
 
 glm::mat4 Camera::getViewMatrix() const
 {
-    return glm::lookAt(Position, Position + Front, Up);
+	return lookAt(VPosition, VPosition + VFront, VUp);
 }
 
-glm::mat4 Camera::getProjectionMatrix(float width, float height) const
+glm::mat4 Camera::getProjectionMatrix(const float Width, const float Height) const
 {
-    return glm::perspective(glm::radians(Zoom), width / height, 0.1f, 100.0f);
+	return glm::perspective(glm::radians(FZoom), Width / Height, 0.1f, 100.0f);
 }
 
-void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)
+void Camera::processKeyboard(const CameraMovement Direction, const float DeltaTime)
 {
-    float velocity = MovementSpeed * deltaTime;
-    if (direction == FORWARD)
-        Position += Front * velocity;
-    if (direction == BACKWARD)
-        Position -= Front * velocity;
-    if (direction == LEFT)
-        Position -= Right * velocity;
-    if (direction == RIGHT)
-        Position += Right * velocity;
-    if (direction == UP)
-        Position += WorldUp * velocity;
-    if (direction == DOWN)
-        Position -= WorldUp * velocity;
+	float velocity = FMovementSpeed * DeltaTime;
+	if (Direction == Forward)
+		VPosition += VFront * velocity;
+	if (Direction == Backward)
+		VPosition -= VFront * velocity;
+	if (Direction == Left)
+		VPosition -= VRight * velocity;
+	if (Direction == Right)
+		VPosition += VRight * velocity;
+	if (Direction == Up)
+		VPosition += VWorldUp * velocity;
+	if (Direction == Down)
+		VPosition -= VWorldUp * velocity;
 }
 
-void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch)
+void Camera::processMouseMovement(float OffsetX, float OffsetY, const GLboolean ConstrainPitch)
 {
-    xoffset *= MouseSensitivity;
-    yoffset *= MouseSensitivity;
+	OffsetX *= FMouseSensitivity;
+	OffsetY *= FMouseSensitivity;
 
-    Yaw += xoffset;
-    Pitch += yoffset;
+	FYaw += OffsetX;
+	FPitch += OffsetY;
 
-    if (constrainPitch)
-    {
-        if (Pitch > 89.0f)
-            Pitch = 89.0f;
-        if (Pitch < -89.0f)
-            Pitch = -89.0f;
-    }
+	if (ConstrainPitch)
+	{
+		if (FPitch > 89.0f)
+			FPitch = 89.0f;
+		if (FPitch < -89.0f)
+			FPitch = -89.0f;
+	}
 
-    updateCameraVectors();
+	updateCameraVectors();
 }
 
-void Camera::ProcessMouseScroll(float yoffset)
+void Camera::processMouseScroll(const float OffsetY)
 {
-    Zoom -= yoffset;
-    if (Zoom < 1.0f)
-        Zoom = 1.0f;
-    if (Zoom > 90.0f) // Adjusted to allow for more zoom out
-        Zoom = 90.0f;
+	FZoom -= OffsetY;
+	if (FZoom < 1.0f)
+		FZoom = 1.0f;
+	if (FZoom > 90.0f)
+		FZoom = 90.0f;
 }
 
 void Camera::updateCameraVectors()
 {
-    glm::vec3 front;
-    front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-    front.y = sin(glm::radians(Pitch));
-    front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-    Front = glm::normalize(front);
-    Right = glm::normalize(glm::cross(Front, WorldUp));
-    Up = glm::normalize(glm::cross(Right, Front));
+	glm::vec3 front;
+	front.x = cos(glm::radians(FYaw)) * cos(glm::radians(FPitch));
+	front.y = sin(glm::radians(FPitch));
+	front.z = sin(glm::radians(FYaw)) * cos(glm::radians(FPitch));
+	VFront = normalize(front);
+	VRight = normalize(cross(VFront, VWorldUp));
+	VUp = normalize(cross(VRight, VFront));
 }

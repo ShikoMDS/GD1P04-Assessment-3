@@ -1,20 +1,37 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : Skybox.h
+Description : Definitions for skybox rendering in OpenGL
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #pragma once
+
+#include "Shader.h"
 
 #include <glew.h>
 #include <glm.hpp>
 #include <vector>
-#include "shader.h"
 
 class Skybox
 {
 public:
-    Skybox(const std::vector<std::string>& faces);
-    void Draw(const Shader& shader) const;
+	explicit Skybox(const std::vector<std::string>& Faces);
+
+	void draw(const Shader& Shader) const;
 
 private:
-    unsigned int VAO, VBO;
-    unsigned int cubemapTexture;
+	void setupSkybox();
+	static unsigned int loadCubeMap(const std::vector<std::string>& Faces);
 
-    void setupSkybox();
-    unsigned int loadCubemap(const std::vector<std::string>& faces);
+	unsigned int MVao;
+	unsigned int MVbo;
+	unsigned int MCubeMapTexture;
 };

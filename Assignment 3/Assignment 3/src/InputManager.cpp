@@ -1,94 +1,123 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : InputManager.cpp
+Description : Implementations for InputManager class
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #include "InputManager.h"
+
 #include <iostream>
 
-InputManager::InputManager(Camera& camera, LightManager& lightManager)
-    : camera(camera), lightManager(lightManager), wireframe(false), cursorVisible(false),
-    lastX(800 / 2.0f), lastY(600 / 2.0f), firstMouse(true) {
-    keyState = {
-        {GLFW_KEY_1, false},
-        {GLFW_KEY_2, false},
-        {GLFW_KEY_3, false},
-        {GLFW_KEY_4, false},
-        {GLFW_KEY_5, false}
-    };
+InputManager::InputManager(Camera& Camera, LightManager& LightManager)
+	: MCamera(Camera), MLightManager(LightManager), MWireframe(false), MCursorVisible(false),
+	  MFirstMouse(true), MLastX(800 / 2.0f), MLastY(600 / 2.0f)
+{
+	MKeyState = {
+		{GLFW_KEY_1, false},
+		{GLFW_KEY_2, false},
+		{GLFW_KEY_3, false},
+		{GLFW_KEY_4, false},
+		{GLFW_KEY_5, false}
+	};
 }
 
-void InputManager::processInput(GLFWwindow* window, float deltaTime) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+void InputManager::processInput(GLFWwindow* Window, const float DeltaTime)
+{
+	if (glfwGetKey(Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(Window, true);
 
-    for (auto& [key, pressed] : keyState) {
-        if (glfwGetKey(window, key) == GLFW_PRESS) {
-            if (!pressed) {
-                pressed = true;
-                keyToggleState[key] = !keyToggleState[key];
-                if (key == GLFW_KEY_1) lightManager.togglePointLights();
-                if (key == GLFW_KEY_2) lightManager.toggleDirectionalLight();
-                if (key == GLFW_KEY_3) lightManager.toggleSpotLight();
-                if (key == GLFW_KEY_4) toggleWireframeMode();
-                if (key == GLFW_KEY_5) toggleCursorVisibility(window);
-            }
-        }
-        else {
-            pressed = false;
-        }
-    }
+	for (auto& [key, pressed] : MKeyState)
+	{
+		if (glfwGetKey(Window, key) == GLFW_PRESS)
+		{
+			if (!pressed)
+			{
+				pressed = true;
+				MKeyToggleState[key] = !MKeyToggleState[key];
+				if (key == GLFW_KEY_1) MLightManager.togglePointLights();
+				if (key == GLFW_KEY_2) MLightManager.toggleDirectionalLight();
+				if (key == GLFW_KEY_3) MLightManager.toggleSpotLight();
+				if (key == GLFW_KEY_4) toggleWireframeMode();
+				if (key == GLFW_KEY_5) toggleCursorVisibility(Window);
+			}
+		}
+		else
+		{
+			pressed = false;
+		}
+	}
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        camera.ProcessKeyboard(UP, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        camera.ProcessKeyboard(DOWN, deltaTime);
+	if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS)
+		MCamera.processKeyboard(Forward, DeltaTime);
+	if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS)
+		MCamera.processKeyboard(Backward, DeltaTime);
+	if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS)
+		MCamera.processKeyboard(Left, DeltaTime);
+	if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS)
+		MCamera.processKeyboard(Right, DeltaTime);
+	if (glfwGetKey(Window, GLFW_KEY_Q) == GLFW_PRESS)
+		MCamera.processKeyboard(Up, DeltaTime);
+	if (glfwGetKey(Window, GLFW_KEY_E) == GLFW_PRESS)
+		MCamera.processKeyboard(Down, DeltaTime);
 }
 
-void InputManager::toggleWireframeMode() {
-    wireframe = !wireframe;
-    if (wireframe)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+void InputManager::toggleWireframeMode()
+{
+	MWireframe = !MWireframe;
+	if (MWireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	else
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void InputManager::toggleCursorVisibility(GLFWwindow* window) {
-    cursorVisible = !cursorVisible;
-    if (cursorVisible) {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        firstMouse = true;
-    }
-    else {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
+void InputManager::toggleCursorVisibility(GLFWwindow* Window)
+{
+	MCursorVisible = !MCursorVisible;
+	if (MCursorVisible)
+	{
+		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		MFirstMouse = true;
+	}
+	else
+	{
+		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
 }
 
-void InputManager::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
+void InputManager::frameBufferSizeCallback(GLFWwindow* Window, const int Width, const int Height)
+{
+	glViewport(0, 0, Width, Height);
 }
 
-void InputManager::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    if (cursorVisible) return;
+void InputManager::mouseCallback(GLFWwindow* Window, const double PosX, const double PosY)
+{
+	if (MCursorVisible) return;
 
-    if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
+	if (MFirstMouse)
+	{
+		MLastX = PosX;
+		MLastY = PosY;
+		MFirstMouse = false;
+	}
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
+	const float OffsetX = PosX - MLastX;
+	const float OffsetY = MLastY - PosY;
 
-    lastX = xpos;
-    lastY = ypos;
+	MLastX = PosX;
+	MLastY = PosY;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+	MCamera.processMouseMovement(OffsetX, OffsetY);
 }
 
-void InputManager::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+void InputManager::scrollCallback(GLFWwindow* Window, double OffsetX, const double OffsetY) const
+{
+	MCamera.processMouseScroll(static_cast<float>(OffsetY));
 }

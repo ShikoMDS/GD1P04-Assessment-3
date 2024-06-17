@@ -1,3 +1,17 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : FragmentShader.frag
+Description : Fragment shader for object model loading and rendering
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #version 460 core
 
 out vec4 FragColor;
@@ -6,12 +20,14 @@ in vec2 TexCoords;
 in vec3 FragPos;
 in vec3 Normal;
 
-struct Material {
+struct Material 
+{
     vec3 specular;
     float shininess;
 };
 
-struct PointLight {
+struct PointLight 
+{
     vec3 position;
     vec3 color;
     float constant;
@@ -19,13 +35,15 @@ struct PointLight {
     float quadratic;
 };
 
-struct DirectionalLight {
+struct DirectionalLight 
+{
     vec3 direction;
     vec3 color;
     float ambientStrength;
 };
 
-struct SpotLight {
+struct SpotLight 
+{
     vec3 position;
     vec3 direction;
     vec3 color;
@@ -42,8 +60,8 @@ uniform DirectionalLight directionalLight;
 uniform SpotLight spotLight;
 uniform vec3 viewPos;
 uniform sampler2D texture_diffuse1;
-uniform bool useTexture; // New uniform to determine if we use texture or solid color
-uniform vec3 solidColor; // New uniform for solid color
+uniform bool useTexture; 
+uniform vec3 solidColor; 
 
 vec3 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, vec3 color)
 {

@@ -1,60 +1,78 @@
+/***********************************************************************
+Bachelor of Software Engineering
+Media Design School
+Auckland
+New Zealand
+
+(c) 2024 Media Design School
+
+File Name : LightManager.h
+Description : Definitions for lighting in OpenGL
+Author : Shikomisen (Ayoub Ahmad)
+Mail : ayoub.ahmad@mds.ac.nz
+**************************************************************************/
+
 #pragma once
 
 #include "Shader.h"
+
 #include <glm.hpp>
 #include <string>
 
-struct PointLight {
-    glm::vec3 position;
-    glm::vec3 color;
-    float constant;
-    float linear;
-    float quadratic;
+struct PointLight
+{
+	glm::vec3 Position;
+	glm::vec3 Colour;
+	float Constant;
+	float Linear;
+	float Quadratic;
 };
 
-struct DirectionalLight {
-    glm::vec3 direction;
-    glm::vec3 color;
-    float ambientStrength; // Add this line
+struct DirectionalLight
+{
+	glm::vec3 Direction;
+	glm::vec3 Colour;
+	float AmbientStrength;
 };
 
 
-struct SpotLight {
-	glm::vec3 position;
-	glm::vec3 direction;
-	glm::vec3 color;
-    float cutOff;
-    float outerCutOff;
-    float constant;
-    float linear;
-    float quadratic;
+struct SpotLight
+{
+	glm::vec3 Position;
+	glm::vec3 Direction;
+	glm::vec3 Colour;
+	float CutOff;
+	float OuterCutOff;
+	float Constant;
+	float Linear;
+	float Quadratic;
 };
 
 class LightManager
 {
 public:
-    LightManager();
+	LightManager();
 
-    void initialize();
-    void updateLighting(const Shader& shader) const;
+	void initialize();
+	void updateLighting(const Shader& Shader) const;
 
-    void togglePointLights();
-    void toggleDirectionalLight();
-    void toggleSpotLight();
+	void togglePointLights();
+	void toggleDirectionalLight();
+	void toggleSpotLight();
 
-    void setSpotLightPosition(const glm::vec3& position);
-    void setSpotLightDirection(const glm::vec3& direction);
-    SpotLight getSpotLight() const;
+	void setSpotLightPosition(const glm::vec3& Position);
+	void setSpotLightDirection(const glm::vec3& Direction);
+	[[nodiscard]] SpotLight getSpotLight() const;
 
-    bool isPointLightsOn() const { return pointLightsOn; }
-    const PointLight& getPointLight(int index) const { return pointLights[index]; }
+	[[nodiscard]] bool isPointLightsOn() const;
+	[[nodiscard]] const PointLight& getPointLight(int Index) const;
 
 private:
-    PointLight pointLights[2];
-    DirectionalLight directionalLight;
-    SpotLight spotLight;
+	PointLight MPointLights[2];
+	DirectionalLight MDirectionalLight;
+	SpotLight MSpotLight;
 
-    bool pointLightsOn;
-    bool directionalLightOn;
-    bool spotLightOn;
+	bool MPointLightsOn;
+	bool MDirectionalLightOn;
+	bool MSpotLightOn;
 };
